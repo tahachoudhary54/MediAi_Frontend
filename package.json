@@ -1,0 +1,46 @@
+{
+    "name": "mediai-healthcare",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint"
+    },
+    "dependencies": {
+        "axios": "^1.16.1",
+        "clsx": "^2.1.1",
+        "jspdf": "^4.2.1",
+        "lucide-react": "^1.14.0",
+        "next": "16.2.6",
+        "react": "19.2.4",
+        "react-dom": "19.2.4",
+        "react-hot-toast": "^2.6.0",
+        "socket.io-client": "^4.8.3",
+        "tailwind-merge": "^3.6.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/postcss": "^4",
+        "@types/node": "25.9.1",
+        "@types/react": "19.2.15",
+        "babel-plugin-react-compiler": "1.0.0",
+        "eslint": "^9",
+        "eslint-config-next": "16.2.6",
+        "tailwindcss": "^4"
+    },
+    "description": "This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).",
+    "main": "index.js",
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/Uzeeerrrr-01/Health_Frontend.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "bugs": {
+        "url": "https://github.com/Uzeeerrrr-01/Health_Frontend/issues"
+    },
+    "homepage": "https://github.com/Uzeeerrrr-01/Health_Frontend#readme"
+}
