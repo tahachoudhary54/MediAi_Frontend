@@ -112,7 +112,7 @@ export default function DoctorVerification() {
 
                   <div className="flex-1 flex gap-4">
                     {doc.degreeCertificate ? (
-                      <a href={`http://localhost:5000/uploads/${doc.degreeCertificate}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
+                      <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${doc.degreeCertificate}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
                         <FileText className="h-8 w-8 text-indigo-500 mb-2" />
                         <span className="text-sm font-medium">View Degree</span>
                       </a>
@@ -124,7 +124,7 @@ export default function DoctorVerification() {
                     )}
 
                     {doc.governmentId ? (
-                      <a href={`http://localhost:5000/uploads/${doc.governmentId}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
+                      <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${doc.governmentId}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
                         <FileText className="h-8 w-8 text-indigo-500 mb-2" />
                         <span className="text-sm font-medium">View ID</span>
                       </a>
@@ -136,7 +136,7 @@ export default function DoctorVerification() {
                     )}
 
                     {doc.medicalLicenseProof ? (
-                      <a href={`http://localhost:5000/uploads/${doc.medicalLicenseProof}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
+                      <a href={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '')}/uploads/${doc.medicalLicenseProof}`} target="_blank" rel="noreferrer" className="flex-1 p-4 border border-slate-200 rounded-lg flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-50">
                         <FileText className="h-8 w-8 text-indigo-500 mb-2" />
                         <span className="text-sm font-medium">View License</span>
                       </a>
