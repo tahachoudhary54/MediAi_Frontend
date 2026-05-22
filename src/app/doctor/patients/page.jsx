@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 
 export default function DoctorPatients() {
+  const router = useRouter();
   const [patients, setPatients] = useState([]);
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
@@ -147,12 +149,31 @@ export default function DoctorPatients() {
                     <p className="text-sm text-slate-300 font-medium mt-0.5">{detail.patient?.email}</p>
                   </div>
                 </div>
-                {detail.patient?.age && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-xs font-semibold border border-white/10 self-start sm:self-auto">
-                    <Activity className="h-4 w-4 text-teal-400 animate-pulse" />
-                    <span>{detail.patient?.age} yrs</span>
-                  </div>
-                )}
+                <div className="flex flex-col sm:flex-row items-center gap-3 self-start sm:self-auto">
+                  {detail.patient?.age && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-xl text-xs font-semibold border border-white/10">
+                      <Activity className="h-4 w-4 text-teal-400 animate-pulse" />
+                      <span>{detail.patient?.age} yrs</span>
+                    </div>
+                  )}
+                  <Button 
+                    onClick={async () => {
+                      try {
+                        const res = await api.post('/chats/doctor-request', { patientId: detail.patient._id });
+                        if (res.data.success) {
+                          toast.success("Chat request sent to patient");
+                          router.push(`/doctor/chat/${res.data.data._id}`);
+                        }
+                      } catch (err) {
+                        toast.error("Failed to start chat with patient");
+                      }
+                    }}
+                    className="bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold shadow-lg shadow-teal-500/20 rounded-xl px-4 py-2 flex items-center gap-2 transition-all"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Start Chat
+                  </Button>
+                </div>
               </div>
 
               {/* Tabs Section */}

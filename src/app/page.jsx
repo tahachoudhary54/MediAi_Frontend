@@ -69,9 +69,9 @@ export default function LandingPage() {
               {/* Right Column (Visual) */}
               <div className="relative flex items-center justify-center h-[500px] w-full mt-12 lg:mt-0">
                 {/* Concentric Circles */}
-                <div className="absolute w-[280px] h-[280px] rounded-full border border-[#BCE6C8]/20" />
-                <div className="absolute w-[400px] h-[400px] rounded-full border border-[#BCE6C8]/15" />
-                <div className="absolute w-[520px] h-[520px] rounded-full border border-[#BCE6C8]/10 hidden sm:block" />
+                <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-[#BCE6C8]/20 border-t-transparent animate-[spin_10s_linear_infinite]" />
+                <div className="absolute w-[400px] h-[400px] rounded-full border-2 border-[#BCE6C8]/15 border-b-transparent animate-[spin_15s_linear_infinite_reverse]" />
+                <div className="absolute w-[520px] h-[520px] rounded-full border-2 border-[#BCE6C8]/10 border-l-transparent hidden sm:block animate-[spin_20s_linear_infinite]" />
 
                 {/* Central Glow */}
                 <div className="absolute w-[220px] h-[220px] rounded-full bg-[#BCE6C8]/30 blur-[50px]" />
@@ -93,28 +93,28 @@ export default function LandingPage() {
                 </div>
 
                 {/* Floating Cards */}
-                <div className="absolute z-20 top-4 left-0 sm:left-[5%] md:left-0 lg:left-[-5%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 transition-transform hover:-translate-y-1">
+                <div className="absolute z-20 top-16 left-6 sm:left-[12%] md:left-8 lg:left-[8%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 animate-float-1 transition-transform hover:scale-105">
                   <div className="w-14 h-14 bg-[#E8F5ED] rounded-2xl flex items-center justify-center text-[#1C6961]">
                     <UserPlus size={28} strokeWidth={2} />
                   </div>
                   <span className="text-[13px] font-bold text-slate-800 text-center">Doctor Sync</span>
                 </div>
 
-                <div className="absolute z-20 top-4 right-0 sm:right-[5%] md:right-0 lg:right-[-5%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 transition-transform hover:-translate-y-1">
+                <div className="absolute z-20 top-16 right-6 sm:right-[12%] md:right-8 lg:right-[8%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 animate-float-2 transition-transform hover:scale-105">
                   <div className="w-14 h-14 bg-[#E8F5ED] rounded-2xl flex items-center justify-center text-[#1C6961]">
                     <ScanText size={28} strokeWidth={2} />
                   </div>
                   <span className="text-[13px] font-bold text-slate-800 text-center">OCR</span>
                 </div>
 
-                <div className="absolute z-20 bottom-4 left-0 sm:left-[5%] md:left-0 lg:left-[-5%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 transition-transform hover:translate-y-1">
+                <div className="absolute z-20 bottom-16 left-6 sm:left-[12%] md:left-8 lg:left-[8%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 animate-float-3 transition-transform hover:scale-105">
                   <div className="w-14 h-14 bg-[#E8F5ED] rounded-2xl flex items-center justify-center text-[#1C6961]">
                     <Bell size={28} strokeWidth={2} />
                   </div>
                   <span className="text-[13px] font-bold text-slate-800 text-center leading-tight">Smart<br/>Reminders</span>
                 </div>
 
-                <div className="absolute z-20 bottom-4 right-0 sm:right-[5%] md:right-0 lg:right-[-5%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 transition-transform hover:translate-y-1">
+                <div className="absolute z-20 bottom-16 right-6 sm:right-[12%] md:right-8 lg:right-[8%] bg-white rounded-3xl shadow-xl p-4 w-32 flex flex-col items-center gap-3 animate-float-4 transition-transform hover:scale-105">
                   <div className="w-14 h-14 bg-[#E8F5ED] rounded-2xl flex items-center justify-center text-[#1C6961]">
                     <div className="relative">
                       <Lock size={28} strokeWidth={2} />

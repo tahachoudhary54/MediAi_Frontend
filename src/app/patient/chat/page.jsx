@@ -15,6 +15,7 @@ export default function DoctorChat() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const doctorId = searchParams.get('doctorId')
+  const chatIdParam = searchParams.get('chatId')
 
   const [doctor, setDoctor] = useState(null)
   const [chat, setChat] = useState(null)
@@ -91,6 +92,23 @@ export default function DoctorChat() {
     initializeChat()
   }, [doctorId, searchParams])
 
+  // Auto-open history modal when chatId param is present (e.g. from follow-up notification)
+  useEffect(() => {
+    if (!chatIdParam || doctorId) return;
+    const fetchAndOpenChat = async () => {
+      try {
+        const res = await api.get(`/chats/${chatIdParam}`);
+        if (res.data.success) {
+          setSelectedHistoryChat(res.data.data);
+          setIsHistoryModalOpen(true);
+        }
+      } catch (err) {
+        console.error('[Follow-up] Failed to load chat:', err);
+      }
+    };
+    fetchAndOpenChat();
+  }, [chatIdParam, doctorId]);
+
   // Recurring polling for status, availability, and doctor list updates
   useEffect(() => {
     let interval
@@ -154,12 +172,18 @@ export default function DoctorChat() {
 
   // Real-time chat messages and consultation status via socket
   useEffect(() => {
-    if (!chat || !chat._id || chat.status === 'ended') return;
+    // Don't setup socket if no chat yet or already ended
+    if (!chat || !chat._id) return;
+    // Don't reconnect if chat is ended — no more events needed
+    if (chat.status === 'ended') return;
+
     const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
     const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
 
-    socket.emit('joinRoom', `chat_${chat._id}`);
-    console.log(`[Socket] Patient joined chat room chat_${chat._id}`);
+    socket.on('connect', () => {
+      socket.emit('joinRoom', `chat_${chat._id}`);
+      console.log(`[Socket] Patient joined chat room chat_${chat._id}`);
+    });
 
     socket.on('messageReceived', (data) => {
       if (data.chatId === chat._id) {
@@ -183,13 +207,36 @@ export default function DoctorChat() {
       }
     });
 
+    // Instant update when doctor accepts or declines — no polling needed
+    socket.on('consultationResponded', (updatedChat) => {
+      console.log('[Socket] Patient received consultationResponded:', updatedChat.status);
+      if (updatedChat._id === chat._id) {
+        setChat(updatedChat);
+        if (updatedChat.status === 'ended') {
+          setConsultationEnded(true);
+        }
+      }
+    });
+
     return () => {
       console.log(`[Socket] Patient disconnecting from chat room chat_${chat._id}`);
       socket.disconnect();
     };
-  }, [chat?._id, chat?.status]);
+  // IMPORTANT: Only depend on chat._id, NOT chat.status.
+  // If we depend on chat.status, the socket disconnects and reconnects every time the
+  // doctor responds, creating a race condition where we miss the consultationResponded event.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chat?._id]);
 
-  // Polling for chat status and messages
+  // Track the currently active chat globally to suppress global popups for this chat
+  useEffect(() => {
+    if (chat?._id) {
+      window.currentActiveChatId = chat._id;
+      return () => { window.currentActiveChatId = null; };
+    }
+  }, [chat?._id]);
+
+  // Polling for chat status and messages (fallback if socket misses an event)
   useEffect(() => {
     let interval;
     if (chat && chat.status !== 'ended') {
@@ -197,7 +244,11 @@ export default function DoctorChat() {
         try {
           const res = await api.get(`/chats/${chat._id}`)
           const updatedChat = res.data.data
-          setChat(updatedChat)
+          // Only update if status actually changed to avoid unnecessary re-renders
+          setChat(prev => {
+            if (prev?.status === updatedChat.status) return prev;
+            return updatedChat;
+          })
 
           // Map backend message format to frontend
           const formattedMessages = updatedChat.messages.map(m => ({
@@ -213,10 +264,10 @@ export default function DoctorChat() {
             clearInterval(interval)
           }
         } catch (err) { }
-      }, 5000) // Poll every 5s
+      }, 3000) // Poll every 3s — faster fallback for status changes
     }
     return () => clearInterval(interval)
-  }, [chat])
+  }, [chat?._id, chat?.status])
 
   // Poll for report status once consultation ended
   useEffect(() => {

@@ -24,6 +24,8 @@ export default function DoctorChatSession() {
   const [allChats, setAllChats] = useState([])
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [followUpText, setFollowUpText] = useState('')
+  const [isSendingFollowUp, setIsSendingFollowUp] = useState(false)
 
   // Vitals State
   const [latestVitals, setLatestVitals] = useState(null)
@@ -225,6 +227,27 @@ export default function DoctorChatSession() {
     await handleSendMessage(url)
   };
 
+  const handleSendFollowUp = async () => {
+    if (!followUpText.trim()) return
+    setIsSendingFollowUp(true)
+    try {
+      const res = await api.post(`/chats/${chatId}/followup`, { content: followUpText.trim() })
+      const formatted = res.data.data.messages.map(m => ({
+        sender: m.senderModel === 'Doctor' ? 'user' : 'patient',
+        content: m.content,
+        timestamp: m.timestamp,
+        _id: m._id
+      }))
+      setMessages(formatted)
+      setFollowUpText('')
+      toast.success('Follow-up message sent to patient')
+    } catch (err) {
+      toast.error('Failed to send follow-up message')
+    } finally {
+      setIsSendingFollowUp(false)
+    }
+  }
+
   const handleEndConsultation = async () => {
     try {
       await api.put(`/chats/${chatId}/end`)
@@ -313,6 +336,42 @@ export default function DoctorChatSession() {
 
   if (isLoading) return <div className="h-[60vh] flex items-center justify-center">Loading chat...</div>
   if (!chat) return <div className="p-8 text-center">Chat not found</div>
+
+  if (chat?.status === 'doctor-requested') {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center p-8 space-y-6 shadow-xl border-teal-100">
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-4 border-teal-100 border-t-teal-600 animate-spin" />
+            <div className="absolute inset-2 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+              <span className="text-3xl font-bold text-teal-700">{chat.patient?.fullName?.charAt(0) || 'P'}</span>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Requesting Consultation</h2>
+            <p className="text-slate-500 mt-2">Waiting for {chat.patient?.fullName} to accept your request...</p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  if (chat?.status === 'declined') {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center p-8 space-y-6 shadow-xl border-red-100">
+          <div className="h-20 w-20 mx-auto bg-red-100 rounded-full flex items-center justify-center text-red-500">
+            <span className="text-2xl font-bold">✕</span>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Request Declined</h2>
+            <p className="text-slate-500 mt-2">The patient declined your chat request.</p>
+          </div>
+          <Button className="w-full bg-slate-900" onClick={() => router.push('/doctor/patients')}>Go Back</Button>
+        </Card>
+      </div>
+    )
+  }
 
   const activeChats = allChats.filter(c => c.status !== 'ended')
   const endedChats = allChats.filter(c => c.status === 'ended')
@@ -470,6 +529,41 @@ export default function DoctorChatSession() {
           <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium text-teal-700 bg-teal-50 border border-teal-100 py-2 px-4 rounded-full self-center shadow-sm">
             <Activity className="h-4 w-4 text-teal-600 animate-pulse" />
             AI Diagnosis Assistant is listening and drafting clinical notes
+          </div>
+        )}
+
+        {/* Follow-up composer for ended chats */}
+        {chat.status === 'ended' && (
+          <div className="mt-3 shrink-0 rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-slate-50 p-4 shadow-sm">
+            <p className="text-[11px] font-bold text-teal-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
+              Send Follow-up Message to Patient
+            </p>
+            <div className="flex gap-2 items-end">
+              <textarea
+                value={followUpText}
+                onChange={e => setFollowUpText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendFollowUp()
+                  }
+                }}
+                placeholder="Type a follow-up message... (Enter to send)"
+                rows={2}
+                className="flex-1 resize-none text-sm rounded-xl border border-teal-200 bg-white px-3 py-2 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-400 shadow-sm"
+              />
+              <button
+                onClick={handleSendFollowUp}
+                disabled={isSendingFollowUp || !followUpText.trim()}
+                className="h-10 w-10 shrink-0 flex items-center justify-center rounded-xl bg-teal-600 hover:bg-teal-500 disabled:opacity-40 disabled:cursor-not-allowed text-white shadow-md transition-all"
+                title="Send follow-up"
+              >
+                {isSendingFollowUp
+                  ? <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <Send className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         )}
       </div>

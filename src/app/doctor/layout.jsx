@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { Topbar } from "@/components/layout/Topbar"
@@ -24,6 +24,53 @@ export default function DoctorLayout({ children }) {
   const [rescheduleTime, setRescheduleTime] = useState("")
   // Track dismissed/rejected chat IDs so polling never re-shows them
   const dismissedChatIds = useRef(new Set())
+  // Preload the notification sound once so there is no gap on second play
+  const notificationAudio = useRef(null)
+  const lastPlayedRequestId = useRef(null)
+  const soundTimers = useRef([])
+
+  useEffect(() => {
+    // Eagerly create and load the audio object once on mount
+    const audio = new Audio("https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3");
+    audio.preload = "auto";
+    audio.load();
+    notificationAudio.current = audio;
+  }, [])
+
+  // Play sound 3 times with a short gap when a NEW incoming request arrives
+  useEffect(() => {
+    if (
+      incomingRequest &&
+      incomingRequest._id !== lastPlayedRequestId.current &&
+      !pathname.includes(incomingRequest._id)
+    ) {
+      lastPlayedRequestId.current = incomingRequest._id;
+
+      // Cancel any previous pending repeats
+      soundTimers.current.forEach(t => clearTimeout(t));
+      soundTimers.current = [];
+
+      const playOnce = () => {
+        try {
+          if (notificationAudio.current) {
+            notificationAudio.current.currentTime = 0;
+            notificationAudio.current.play().catch(e => console.log('Audio error:', e));
+          }
+        } catch (err) {}
+      };
+
+      // Play immediately, then repeat 2 more times with 1800ms (medium) gap
+      playOnce();
+      soundTimers.current.push(setTimeout(playOnce, 1800));
+      soundTimers.current.push(setTimeout(playOnce, 3600));
+    }
+
+    // If request is dismissed, cancel any scheduled repeats
+    if (!incomingRequest) {
+      soundTimers.current.forEach(t => clearTimeout(t));
+      soundTimers.current = [];
+    }
+  }, [incomingRequest, pathname])
 
   useEffect(() => {
     if (authLoaded) {
@@ -91,6 +138,10 @@ export default function DoctorLayout({ children }) {
     };
   }, [isReady, role, user]);
 
+  // Keep a ref to incomingRequest so polling closure isn't stale
+  const incomingRequestRef = useRef(incomingRequest)
+  useEffect(() => { incomingRequestRef.current = incomingRequest }, [incomingRequest])
+
   // Polling for incoming consultation requests (Fallback)
   useEffect(() => {
     let interval;
@@ -104,23 +155,24 @@ export default function DoctorLayout({ children }) {
               const newRequest = res.data.data.find(
                 (c) => !dismissedChatIds.current.has(c._id)
               )
+              const current = incomingRequestRef.current;
               if (newRequest) {
-                if (!incomingRequest || incomingRequest._id !== newRequest._id) {
+                if (!current || current._id !== newRequest._id) {
                   setIncomingRequest(newRequest)
                 }
-              } else if (incomingRequest) {
+              } else if (current) {
                 setIncomingRequest(null)
               }
-            } else if (incomingRequest) {
+            } else if (incomingRequestRef.current) {
               // The request was cancelled or accepted elsewhere
               setIncomingRequest(null)
             }
           }
         } catch (err) { }
-      }, 10000) // Poll every 10s
+      }, 10000) // Poll every 10s as a fallback
     }
     return () => clearInterval(interval)
-  }, [isReady, role, incomingRequest])
+  }, [isReady, role]) // No longer depends on incomingRequest — uses ref instead
 
   const handleAccept = async () => {
     try {
@@ -201,55 +253,63 @@ export default function DoctorLayout({ children }) {
 
       {/* Incoming Consultation Modal */}
       {incomingRequest && !pathname.includes(incomingRequest._id) && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-teal-600 p-6 text-white text-center relative">
+        <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0f172a] rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-700/50">
+            <div className="bg-gradient-to-br from-teal-900 to-teal-950 p-8 text-center relative border-b border-teal-800/50">
               <button
                 onClick={handleBusy}
-                className="absolute top-3 right-3 h-7 w-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white font-bold text-sm transition-all"
-                title="Dismiss"
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition-all"
+                title="Decline"
               >✕</button>
-              <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/30">
-                <MessageSquare className="h-8 w-8 text-white" />
+              
+              <div className="relative mx-auto w-20 h-20 mb-6">
+                <div className="absolute inset-0 rounded-full border-2 border-teal-500/30 animate-ping"></div>
+                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-[#0f172a]">
+                  <MessageSquare className="h-8 w-8 text-white" />
+                </div>
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-teal-950 flex items-center justify-center">
+                   <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold">Incoming Consultation</h3>
-              <p className="text-teal-100 text-sm mt-1">A patient wants to chat with you right now</p>
+              
+              <h3 className="text-2xl font-extrabold text-white tracking-tight">Consultation Request</h3>
+              <p className="text-teal-200/80 text-sm mt-2 font-medium">{incomingRequest.patient?.fullName} wants to connect with you</p>
             </div>
 
-            <div className="p-6">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 mb-6">
-                <div className="h-12 w-12 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-lg">
+            <div className="p-8 space-y-6">
+              <div className="flex items-center gap-4 p-5 bg-slate-800/50 rounded-2xl border border-slate-700/50">
+                <div className="h-14 w-14 rounded-full bg-slate-700 flex items-center justify-center text-teal-400 font-bold text-xl border border-slate-600 shadow-inner">
                   {incomingRequest.patient?.fullName?.charAt(0)}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-sm text-slate-500 font-medium">Patient Name</p>
-                  <p className="text-lg font-bold text-slate-900 truncate">{incomingRequest.patient?.fullName}</p>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Patient</p>
+                  <p className="text-xl font-bold text-slate-100 truncate">{incomingRequest.patient?.fullName}</p>
                 </div>
               </div>
 
               {isRescheduling ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700">Suggest New Time</label>
+                    <label className="text-sm font-bold text-slate-300">Suggest New Time</label>
                     <input
                       type="datetime-local"
-                      className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 text-slate-900 bg-white"
+                      className="w-full h-12 px-4 rounded-xl border border-slate-600 focus:ring-2 focus:ring-teal-500 text-slate-100 bg-slate-800"
                       value={rescheduleTime}
                       onChange={(e) => setRescheduleTime(e.target.value)}
                     />
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setIsRescheduling(false)}>Back</Button>
-                    <Button className="flex-1 bg-amber-500 hover:bg-amber-600 text-white" onClick={handleReschedule}>Confirm</Button>
+                  <div className="flex gap-3">
+                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-600 bg-transparent text-slate-300 hover:bg-slate-800" onClick={() => setIsRescheduling(false)}>Back</Button>
+                    <Button className="flex-1 h-12 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold" onClick={handleReschedule}>Confirm</Button>
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-12 border-slate-200 text-slate-600 font-bold hover:bg-slate-50" onClick={handleBusy}>
-                    <Clock className="h-4 w-4 mr-2" /> Busy
+                <div className="grid grid-cols-2 gap-4">
+                  <Button variant="outline" className="h-14 rounded-xl border-slate-700 bg-slate-800/80 text-slate-300 font-bold hover:bg-slate-700 hover:text-white transition-all" onClick={handleBusy}>
+                    Decline
                   </Button>
-                  <Button className="h-12 bg-teal-600 hover:bg-teal-700 font-bold shadow-lg shadow-teal-100" onClick={handleAccept}>
-                    <Check className="h-4 w-4 mr-2" /> Accept
+                  <Button className="h-14 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)] transition-all flex items-center justify-center gap-2" onClick={handleAccept}>
+                    Accept Consultation
                   </Button>
                 </div>
               )}
