@@ -265,11 +265,32 @@ export default function HealthReports() {
                 {selectedReport.plan && (
                   <div className="space-y-2">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Plan & Treatment</h4>
-                    <div className="p-4 bg-slate-50 border border-slate-150 rounded-xl text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
                       {selectedReport.plan}
                     </div>
                   </div>
                 )}
+
+                {/* NEW SECTION — Negative Findings */}
+                <div className="space-y-2 mt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">Negative Findings</h4>
+                  <div className="p-4 bg-white border border-slate-200 shadow-sm rounded-xl">
+                    <ul className="space-y-3">
+                      {(selectedReport.negativeFindings || [
+                        "No chest pain reported",
+                        "No breathing difficulty reported",
+                        "No severe emergency symptoms observed"
+                      ]).map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-3 text-sm">
+                          <div className="mt-0.5 p-1 bg-teal-50 rounded-full text-teal-600 border border-teal-100 shrink-0">
+                            <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                          </div>
+                          <span className="leading-snug font-medium text-slate-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </>
             ) : (
               <div className="space-y-2">
