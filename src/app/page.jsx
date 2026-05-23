@@ -127,10 +127,8 @@ export default function LandingPage() {
             </div>
           </div>
           
-          {/* Bottom decorative star/sparkle */}
-          <div className="absolute bottom-8 right-8 text-slate-500/30">
-            <Sparkles size={40} />
-          </div>
+          
+
         </section>
 
         {/* Features Section */}
