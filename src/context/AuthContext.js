@@ -1,6 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import api from '@/lib/api'
 
@@ -74,7 +74,12 @@ export function AuthProvider({ children }) {
             const actualUser = res.data.data
             console.log("[AuthContext] verifyToken success. Role from API:", actualUser.role);
             
-            setUser(actualUser)
+            setUser(prevUser => {
+              if (JSON.stringify(prevUser) === JSON.stringify(actualUser)) {
+                return prevUser;
+              }
+              return actualUser;
+            })
             if (actualUser.role) {
               setRole(actualUser.role)
               sessionStorage.setItem('role', actualUser.role)
@@ -105,7 +110,13 @@ export function AuthProvider({ children }) {
       const storedUser = sessionStorage.getItem('user')
       if (storedUser) {
         try {
-          setUser(JSON.parse(storedUser))
+          const parsedUser = JSON.parse(storedUser);
+          setUser(prevUser => {
+            if (JSON.stringify(prevUser) === JSON.stringify(parsedUser)) {
+              return prevUser;
+            }
+            return parsedUser;
+          })
         } catch (e) {
           console.error("[AuthContext] Failed to parse updated user from storage", e)
         }
@@ -115,7 +126,7 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("profileUpdated", handleProfileUpdated)
   }, [])
 
-  const login = (userData, userToken, userRole) => {
+  const login = useCallback((userData, userToken, userRole) => {
     console.log("[AuthContext] login() called with role:", userRole);
     
     // Set storage FIRST
@@ -130,19 +141,23 @@ export function AuthProvider({ children }) {
     
     console.log(`[AuthContext] Redirecting to /${userRole}/dashboard`);
     router.push(`/${userRole}/dashboard`)
-  }
+  }, [router])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     console.log("[AuthContext] logout() called");
     sessionStorage.clear()
     setToken(null)
     setRole(null)
     setUser(null)
     router.push('/auth/login')
-  }
+  }, [router])
+
+  const contextValue = useMemo(() => ({
+    user, token, role, authLoaded, login, logout
+  }), [user, token, role, authLoaded, login, logout])
 
   return (
-    <AuthContext.Provider value={{ user, token, role, authLoaded, login, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )
