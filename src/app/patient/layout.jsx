@@ -71,12 +71,17 @@ export default function PatientLayout({ children }) {
       patientSocket.off("connect_error");
       patientSocket.off("appointmentCancelled");
       patientSocket.off("doctorChatRequest");
+      patientSocket.off("userProfileUpdated");
       patientSocket.off("disconnect");
 
       patientSocket.on("connect", () => {
         console.log(`[Socket] Patient socket connected with patientId: ${patientId}`);
         patientSocket.emit("joinRoom", `patient_${patientId}`);
       });
+
+      if (patientSocket.connected) {
+        patientSocket.emit("joinRoom", `patient_${patientId}`);
+      }
 
       patientSocket.on("connect_error", (err) => {
         console.error("[Socket] Patient connection error:", err);
@@ -115,11 +120,28 @@ export default function PatientLayout({ children }) {
         }
       });
 
+      patientSocket.on("userProfileUpdated", (updatedUser) => {
+        console.log(`[Socket] Patient received userProfileUpdated event:`, updatedUser);
+        const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
+        const base = stored.user || stored;
+        if (base._id === updatedUser._id || base.id === updatedUser._id) {
+           const updatedData = { ...base, ...updatedUser };
+           sessionStorage.setItem("user", JSON.stringify(updatedData));
+           window.dispatchEvent(new CustomEvent("profileUpdated"));
+           toast.success("Your profile was updated by an admin");
+        }
+      });
+
       patientSocket.on("doctorFollowUpMessage", (data) => {
         console.log(`[Socket] Patient received doctorFollowUpMessage event:`, data);
         
         // If the patient is already actively viewing this specific chat, don't show the global popup
         if (window.currentActiveChatId === data.chatId) {
+            return;
+        }
+
+        // Ignore auto-generated system messages like Call History
+        if (data.message?.content?.startsWith('📞')) {
             return;
         }
 

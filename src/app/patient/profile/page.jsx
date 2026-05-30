@@ -37,38 +37,43 @@ export default function ProfileSettings() {
   })
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("user")
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          const u = parsed.user || parsed
-          const ec = u.emergencyContact || {}
-          const initial = {
-            fullName: u.fullName || u.name || "",
-            email: u.email || "",
-            phone: u.phone || "",
-            dob: u.dob || "",
-            bloodGroup: u.bloodGroup || "",
-            address: u.address || "",
-            sex: u.sex || "",
-            emergencyName: ec.name || "",
-            emergencyPhone: ec.phone || "",
-            emergencyRelation: ec.relation || "",
+    const loadProfile = () => {
+      if (typeof window !== "undefined") {
+        const stored = sessionStorage.getItem("user")
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored)
+            const u = parsed.user || parsed
+            const ec = u.emergencyContact || {}
+            const initial = {
+              fullName: u.fullName || u.name || "",
+              email: u.email || "",
+              phone: u.phone || "",
+              dob: u.dob || "",
+              bloodGroup: u.bloodGroup || "",
+              address: u.address || "",
+              sex: u.sex || "",
+              emergencyName: ec.name || "",
+              emergencyPhone: ec.phone || "",
+              emergencyRelation: ec.relation || "",
+            }
+            setForm(initial)
+            setSavedForm(initial)
+            // Load avatar
+            if (u.avatar) {
+              setAvatarPreview(
+                u.avatar.startsWith("http") ? u.avatar : `${BACKEND_URL}/uploads/${u.avatar}`
+              )
+            }
+          } catch (e) {
+            console.error("Failed to parse session user")
           }
-          setForm(initial)
-          setSavedForm(initial)
-          // Load avatar
-          if (u.avatar) {
-            setAvatarPreview(
-              u.avatar.startsWith("http") ? u.avatar : `${BACKEND_URL}/uploads/${u.avatar}`
-            )
-          }
-        } catch (e) {
-          console.error("Failed to parse session user")
         }
       }
-    }
+    };
+
+    loadProfile();
+    window.addEventListener("profileUpdated", loadProfile);
 
     const fetchEmergencies = async () => {
       setIsEmergenciesLoading(true)
@@ -84,6 +89,8 @@ export default function ProfileSettings() {
       }
     }
     fetchEmergencies()
+
+    return () => window.removeEventListener("profileUpdated", loadProfile);
   }, [])
 
   const handleChange = (e) => {

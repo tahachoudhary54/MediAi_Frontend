@@ -43,12 +43,39 @@ export default function AdminLayout({ children }) {
       });
 
       socket.on("connect", () => {
-        console.log(`[Socket] Admin joined room: admin_room`);
+        console.log(`[Socket] Admin joined room: admin_room and admin`);
         socket.emit("joinRoom", "admin_room");
+        socket.emit("joinRoom", "admin"); // Join the emergency room
       });
 
       socket.on("connect_error", (err) => {
         console.error("[Socket] Admin connection error:", err);
+      });
+
+      socket.on("emergency_alert", (newEmergency) => {
+        console.log(`[Socket] Admin received emergency_alert:`, newEmergency);
+        
+        toast.error(`🚨 NEW SOS ALERT: ${newEmergency.patient?.fullName || 'Patient'}`, { 
+          duration: 15000,
+          position: "top-center",
+          style: { background: '#fef2f2', color: '#991b1b', fontWeight: 'bold', border: '2px solid #ef4444' }
+        });
+        
+        try {
+          if ('speechSynthesis' in window) {
+            const patientName = newEmergency.patient?.fullName || 'an unknown patient';
+            const msg = new SpeechSynthesisUtterance(`Emergency SOS alert received from ${patientName}. Please check the emergency monitoring page immediately.`);
+            msg.rate = 0.9;
+            msg.pitch = 1.1;
+            msg.volume = 1;
+            window.speechSynthesis.speak(msg);
+          }
+        } catch (e) {
+          console.warn("Speech synthesis failed", e);
+        }
+
+        // Dispatch event for any local listeners (like the emergency monitoring page)
+        window.dispatchEvent(new CustomEvent("emergency_alert_received", { detail: newEmergency }));
       });
 
       socket.on("appointmentCancelledAdmin", (data) => {

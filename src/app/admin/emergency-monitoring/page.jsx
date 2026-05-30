@@ -42,22 +42,47 @@ export default function EmergencyMonitoring() {
   }, [])
 
   useEffect(() => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const socketUrl = apiBase.replace('/api', '');
-    const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+    const playAlertSound = () => {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playNote = (freq, startTime, duration) => {
+          const osc = audioCtx.createOscillator();
+          const gainNode = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, startTime);
+          gainNode.gain.setValueAtTime(0, startTime);
+          gainNode.gain.linearRampToValueAtTime(0.3, startTime + 0.05);
+          gainNode.gain.linearRampToValueAtTime(0, startTime + duration);
+          osc.connect(gainNode);
+          gainNode.connect(audioCtx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + duration);
+        };
+        const now = audioCtx.currentTime;
+        // Play an urgent two-tone alert pattern twice
+        playNote(880, now, 0.2);
+        playNote(1108.73, now + 0.15, 0.4);
+        playNote(880, now + 0.45, 0.2);
+        playNote(1108.73, now + 0.60, 0.4);
+      } catch (e) {
+        console.warn("Audio alert failed to play:", e);
+      }
+    };
 
-    socket.emit('joinRoom', 'admin');
-
-    socket.on('emergency_alert', (newEmergency) => {
-      toast.error(`🚨 NEW SOS ALERT: ${newEmergency.patient?.fullName || 'Patient'}`, { duration: 10000 });
+    const handleEmergencyAlert = (e) => {
+      const newEmergency = e.detail;
+      playAlertSound();
+      // Toast and Voice message are handled in the global admin layout
       setEmergencies(prev => {
-        if (prev.some(e => e._id === newEmergency._id)) return prev;
+        if (prev.some(item => item._id === newEmergency._id)) return prev;
         return [newEmergency, ...prev];
       });
-    });
+    };
+
+    window.addEventListener("emergency_alert_received", handleEmergencyAlert);
 
     return () => {
-      socket.disconnect();
+      window.removeEventListener("emergency_alert_received", handleEmergencyAlert);
     };
   }, [])
 

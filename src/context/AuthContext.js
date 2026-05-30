@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import api from '@/lib/api'
+import { io } from 'socket.io-client'
 
 const AuthContext = createContext()
 
@@ -125,6 +126,38 @@ export function AuthProvider({ children }) {
     window.addEventListener("profileUpdated", handleProfileUpdated)
     return () => window.removeEventListener("profileUpdated", handleProfileUpdated)
   }, [])
+
+  // Listen to socket for real-time status updates
+  useEffect(() => {
+    let socket;
+    if (authLoaded && user && role === 'doctor') {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const socketUrl = apiBase.replace('/api', '');
+      
+      socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+      
+      socket.on('doctorStatusChanged', (data) => {
+        if (data.doctorId === user._id || data.doctorId === user.id) {
+          console.log("[AuthContext] Real-time status update received via socket:", data.status);
+          setUser(prev => {
+            if (!prev || prev.onlineStatus === data.status) return prev;
+            const updated = { ...prev, onlineStatus: data.status };
+            if (data.breakExpiresAt) {
+              updated.breakExpiresAt = data.breakExpiresAt;
+            } else if (data.status !== 'break') {
+              updated.breakExpiresAt = undefined;
+            }
+            sessionStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+          });
+        }
+      });
+    }
+    
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [authLoaded, user?._id, role]);
 
   const login = useCallback((userData, userToken, userRole) => {
     console.log("[AuthContext] login() called with role:", userRole);

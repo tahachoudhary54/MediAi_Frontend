@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { Video, Mic, Activity, FileText, FileClock, History, MessageSquare, Clock, Calendar, Folder, Send, Edit2, CheckCircle, Heart, Thermometer, Weight, Watch, Trash2 } from "lucide-react";
+import { Video, Phone, Mic, Activity, FileText, FileClock, History, MessageSquare, Clock, Calendar, Folder, Send, Edit2, CheckCircle, Heart, Thermometer, Weight, Watch, Trash2 } from "lucide-react";
 import { ChatWindow } from "@/components/shared/ChatWindow";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
 import { useAuth } from "@/context/AuthContext"
+import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 export default function DoctorChatSession() {
   const params = useParams()
@@ -24,6 +25,7 @@ export default function DoctorChatSession() {
   const [allChats, setAllChats] = useState([])
   const [messages, setMessages] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [chatSocket, setChatSocket] = useState(null)
   const [followUpText, setFollowUpText] = useState('')
   const [isSendingFollowUp, setIsSendingFollowUp] = useState(false)
 
@@ -122,6 +124,7 @@ export default function DoctorChatSession() {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const socketUrl = apiBase.replace('/api', '');
     const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+    setChatSocket(socket);
 
     socket.emit('joinRoom', `chat_${chatId}`);
     console.log(`[Socket] Doctor joined chat room chat_${chatId}`);
@@ -153,6 +156,7 @@ export default function DoctorChatSession() {
     return () => {
       console.log(`[Socket] Doctor disconnecting from chat room chat_${chatId}`);
       socket.disconnect();
+      setChatSocket(null);
     };
   }, [chatId, chat?.status]);
 
@@ -511,7 +515,10 @@ export default function DoctorChatSession() {
           disabled={chat.status === 'ended'}
           headerRight={
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100">
+              <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=false`)}>
+                <Phone className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=true`)}>
                 <Video className="h-5 w-5" />
               </Button>
               {chat.status !== 'ended' && (
@@ -822,6 +829,9 @@ export default function DoctorChatSession() {
           </Card>
         )}
       </div>
+      
+      {/* Incoming Call Modal */}
+      <IncomingCallModal socket={chatSocket} />
     </div>
   )
 }

@@ -590,23 +590,27 @@ export default function AdminUsers() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                 <div>
                   <p className="text-slate-500 mb-1">Allergies</p>
-                  <p className="font-medium text-slate-900">{selectedUser.allergies || "None"}</p>
+                  <p className="font-medium text-slate-900">{Array.isArray(selectedUser.allergies) ? selectedUser.allergies.join(', ') : (selectedUser.allergies || "None")}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 mb-1">Current Medications</p>
-                  <p className="font-medium text-slate-900">{selectedUser.currentMedications || "None"}</p>
+                  <p className="font-medium text-slate-900">{Array.isArray(selectedUser.currentMedications) ? selectedUser.currentMedications.join(', ') : (selectedUser.currentMedications || "None")}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 mb-1">Previous Disease History</p>
-                  <p className="font-medium text-slate-900">{selectedUser.previousDiseaseHistory || "None"}</p>
+                  <p className="font-medium text-slate-900">{Array.isArray(selectedUser.previousDiseaseHistory) ? selectedUser.previousDiseaseHistory.join(', ') : (selectedUser.previousDiseaseHistory || "None")}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 mb-1">Family Disease History</p>
-                  <p className="font-medium text-slate-900">{selectedUser.familyDiseaseHistory || "None"}</p>
+                  <p className="font-medium text-slate-900">{Array.isArray(selectedUser.familyDiseaseHistory) ? selectedUser.familyDiseaseHistory.join(', ') : (selectedUser.familyDiseaseHistory || "None")}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 mb-1">Emergency Contact</p>
-                  <p className="font-medium text-slate-900">{selectedUser.emergencyContact || "None"}</p>
+                  <p className="font-medium text-slate-900">
+                    {typeof selectedUser.emergencyContact === 'object' && selectedUser.emergencyContact !== null 
+                      ? `${selectedUser.emergencyContact.name || ""}${selectedUser.emergencyContact.phone ? ", " + selectedUser.emergencyContact.phone : ""}${selectedUser.emergencyContact.relation ? ", " + selectedUser.emergencyContact.relation : ""}` 
+                      : (selectedUser.emergencyContact || "None")}
+                  </p>
                 </div>
               </div>
             </div>

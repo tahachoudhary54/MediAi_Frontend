@@ -10,6 +10,7 @@ import { Video, Phone, Activity, FileText, CheckCircle2, Clock, Calendar, Histor
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
+import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 export default function DoctorChat() {
   const searchParams = useSearchParams()
@@ -26,6 +27,7 @@ export default function DoctorChat() {
   const [chatHistory, setChatHistory] = useState([])
   const [selectedHistoryChat, setSelectedHistoryChat] = useState(null)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false)
+  const [chatSocket, setChatSocket] = useState(null)
 
   // Patient Chat History Dashboard States
   const [patientChats, setPatientChats] = useState([])
@@ -92,14 +94,24 @@ export default function DoctorChat() {
     initializeChat()
   }, [doctorId, searchParams])
 
-  // Auto-open history modal when chatId param is present (e.g. from follow-up notification)
+  // Auto-open history modal when chatId param is present (e.g. from follow-up notification) or redirect to active chat
   useEffect(() => {
     if (!chatIdParam || doctorId) return;
     const fetchAndOpenChat = async () => {
       try {
         const res = await api.get(`/chats/${chatIdParam}`);
         if (res.data.success) {
-          setSelectedHistoryChat(res.data.data);
+          const chatData = res.data.data;
+          
+          // If the chat is not ended, ALWAYS redirect to the live chat window!
+          if (chatData.status !== 'ended') {
+            const docId = chatData.doctor?._id || chatData.doctor;
+            router.replace(`/patient/chat?doctorId=${docId}&resume=true`);
+            return;
+          }
+
+          // Only show past consultation modal if chat is actually ended
+          setSelectedHistoryChat(chatData);
           setIsHistoryModalOpen(true);
         }
       } catch (err) {
@@ -107,7 +119,7 @@ export default function DoctorChat() {
       }
     };
     fetchAndOpenChat();
-  }, [chatIdParam, doctorId]);
+  }, [chatIdParam, doctorId, router]);
 
   // Recurring polling for status, availability, and doctor list updates
   useEffect(() => {
@@ -179,6 +191,7 @@ export default function DoctorChat() {
 
     const socketUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace('/api', '');
     const socket = io(socketUrl, { withCredentials: true, transports: ['websocket', 'polling'] });
+    setChatSocket(socket);
 
     socket.on('connect', () => {
       socket.emit('joinRoom', `chat_${chat._id}`);
@@ -221,6 +234,7 @@ export default function DoctorChat() {
     return () => {
       console.log(`[Socket] Patient disconnecting from chat room chat_${chat._id}`);
       socket.disconnect();
+      setChatSocket(null);
     };
   // IMPORTANT: Only depend on chat._id, NOT chat.status.
   // If we depend on chat.status, the socket disconnects and reconnects every time the
@@ -602,6 +616,8 @@ export default function DoctorChat() {
                   onClick={() => {
                     setIsHistoryModalOpen(false)
                     setSelectedHistoryChat(null)
+                    // Remove chatId from URL so it doesn't pop up again on refresh
+                    router.replace('/patient/chat')
                   }}
                   className="text-white hover:text-teal-100 text-sm font-bold bg-white/10 hover:bg-white/20 h-8 w-8 rounded-full flex items-center justify-center transition-all"
                 >
@@ -789,10 +805,10 @@ export default function DoctorChat() {
           disabled={consultationEnded || chat?.status !== 'active'}
           headerRight={
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-slate-600">
+              <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=false`)}>
                 <Phone className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push('/patient/video-call')}>
+              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=true`)}>
                 <Video className="h-5 w-5" />
               </Button>
               {!consultationEnded && (
@@ -1004,6 +1020,9 @@ export default function DoctorChat() {
           </div>
         </div>
       )}
+      
+      {/* Incoming Call Modal */}
+      <IncomingCallModal socket={chatSocket} />
     </div>
   )
 }
