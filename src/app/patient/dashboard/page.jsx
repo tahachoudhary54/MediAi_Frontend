@@ -50,13 +50,12 @@ export default function PatientDashboard() {
         }
       }
 
-      const [apptsRes, remsRes, repsRes, notifsRes, vitalsRes, meRes, activityRes] = await Promise.allSettled([
+      const [apptsRes, remsRes, repsRes, notifsRes, vitalsRes, activityRes] = await Promise.allSettled([
         api.get('/appointments/patient'),
         api.get('/medicines/patient'),
         api.get('/reports/patient'),
         api.get('/notifications'),
         api.get('/patient/vitals/latest'),
-        api.get('/auth/me'),
         api.get('/patient/activity/weekly')
       ])
 

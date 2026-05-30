@@ -316,6 +316,15 @@ export default function EmergencyMonitoring() {
                         <div className="space-y-1">
                           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contact</p>
                           <p className="text-sm text-slate-700 font-medium">{emergency.patient?.phone || "N/A"}</p>
+                          {emergency.patient?.emergencyContact?.phone && (
+                            <div className="mt-2 pt-2 border-t border-slate-100">
+                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Emergency Contact</p>
+                              <p className="text-sm text-slate-700 font-medium">{emergency.patient.emergencyContact.phone}</p>
+                              {emergency.patient.emergencyContact.name && (
+                                <p className="text-[10px] text-slate-500 font-medium">{emergency.patient.emergencyContact.name} ({emergency.patient.emergencyContact.relation || 'Unknown'})</p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
 

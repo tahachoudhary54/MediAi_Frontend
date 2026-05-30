@@ -10,8 +10,10 @@ import { Calendar as CalendarIcon, Clock, Video, MapPin, Search, Plus, Filter, X
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 export default function AppointmentsPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("upcoming")
   const [appointments, setAppointments] = useState([])
   const [doctors, setDoctors] = useState([])
@@ -188,13 +190,26 @@ export default function AppointmentsPage() {
         reason: formData.reason || "General Consultation" // Ensure reason is not empty
       }
 
-      await api.post('/appointments', payload)
-      toast.success("Appointment booked successfully!")
-      fetchAppointments()
-      setIsBookingModalOpen(false)
-      setFormData({
-        doctor: "", date: "", time: "", consultationType: "video", reason: ""
+      const res = await api.post('/appointments', payload)
+      const aptId = res.data.data._id
+
+      toast.success("Slot secured, redirecting to payment...")
+      
+      // Call payment checkout endpoint
+      const paymentRes = await api.post('/payment/checkout', {
+        itemId: aptId,
+        type: 'appointment'
       })
+
+      if (paymentRes.data.success) {
+        setIsBookingModalOpen(false)
+        setFormData({
+          doctor: "", date: "", time: "", consultationType: "video", reason: ""
+        })
+        router.push(paymentRes.data.data.url)
+      } else {
+        toast.error("Failed to initiate payment")
+      }
     } catch (err) {
       console.error("Failed to book appointment", err)
       toast.error(err.response?.data?.message || err.message || "Failed to book appointment")
@@ -356,15 +371,23 @@ export default function AppointmentsPage() {
                 {/* Details Block */}
                 <div className="flex-1 p-6 flex flex-col sm:flex-row gap-6 sm:items-center justify-between">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex flex-wrap items-center gap-3 mb-2">
                       <h3 className="text-xl font-semibold text-slate-900">Dr. {apt.doctor?.fullName || 'Unknown'}</h3>
                       <Badge variant={
                         apt.status === "confirmed" ? "success" :
-                          apt.status === "pending" ? "warning" :
-                            apt.status === "cancelled" ? "destructive" : "secondary"
+                          apt.status === "scheduled" ? "default" :
+                            apt.status === "pending" ? "warning" :
+                              apt.status === "cancelled" ? "destructive" : "secondary"
                       }>
                         {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
                       </Badge>
+                      
+                      {apt.paymentStatus === 'paid' ? (
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Paid ₹{apt.amount || 500}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Payment Pending</Badge>
+                      )}
+
                       {apt.updatedAt && new Date(apt.updatedAt) > new Date(apt.createdAt) && (
                         <Badge variant="warning" className="text-xs">
                           Updated by Doctor

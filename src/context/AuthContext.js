@@ -97,11 +97,7 @@ export function AuthProvider({ children }) {
       }
       
       verifyToken()
-      
-      // Poll every 10s for real-time status and dot updates
-      interval = setInterval(verifyToken, 10000)
     }
-    return () => clearInterval(interval)
   }, [authLoaded, token])
 
   // Listen to profile updates to sync state in real-time across the app

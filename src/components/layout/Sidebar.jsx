@@ -28,7 +28,8 @@ import {
   FileSpreadsheet,
   Megaphone,
   LifeBuoy,
-  FileClock
+  FileClock,
+  Truck
 } from "lucide-react"
 
 
@@ -49,6 +50,7 @@ export function Sidebar({ role }) {
       { name: "Health Reports", href: "/patient/reports", icon: FileText },
       { name: "Prescription OCR", href: "/patient/prescription-ocr", icon: ScanLine },
       { name: "Medicine Reminders", href: "/patient/reminders", icon: Clock },
+      { name: "Pharmacy Delivery", href: "/patient/pharmacy", icon: Truck },
       { name: "Health Records", href: "/patient/records", icon: FolderHeart },
       { name: "Profile & Settings", href: "/patient/profile", icon: Settings },
       { name: "Support Tickets", href: "/patient/support-tickets", icon: LifeBuoy },
@@ -76,6 +78,7 @@ export function Sidebar({ role }) {
       { name: "Doctor Verification", href: "/admin/doctor-verification", icon: ShieldCheck },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar },
       { name: "Reports", href: "/admin/reports", icon: FileText },
+      { name: "Pharmacy Orders", href: "/admin/pharmacy", icon: Truck },
       { name: "Emergency Monitoring", href: "/admin/emergency-monitoring", icon: AlertTriangle, variant: "destructive" },
       { name: "Transactions", href: "/admin/transactions", icon: FileSpreadsheet },
       { name: "Support Tickets", href: "/admin/support-tickets", icon: LifeBuoy },

@@ -16,16 +16,18 @@ function RegisterContent() {
   const searchParams = useSearchParams()
   const role = searchParams.get("role") || "patient"
 
-  const { token, authLoaded } = useAuth()
+  const { token, authLoaded, login } = useAuth()
   const [step, setStep] = useState(1)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [verificationStatus, setVerificationStatus] = useState(searchParams.get("status") || "Pending")
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [resendTimer, setResendTimer] = useState(60) // Start with 60s cooldown initially when they enter step 3
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", password: "", phone: "",
-    age: "", sex: "", bloodGroup: "", allergies: "", medications: "", history: "", familyHistory: "", emergency: "",
+    age: "", sex: "", bloodGroup: "", allergies: "", medications: "", history: "", familyHistory: "", emergencyName: "", emergencyPhone: "",
     specialization: "", experience: "", license: "", clinic: "", clinicAddress: ""
   })
 
@@ -71,11 +73,71 @@ function RegisterContent() {
     }
   }, [role, router])
 
+  // Effect to handle OTP resend timer
+  useEffect(() => {
+    let timer;
+    if (resendTimer > 0) {
+      timer = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendTimer]);
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value })
 
   const handleFileChange = (e, field) => {
     if (e.target.files && e.target.files[0]) {
       setFiles({ ...files, [field]: e.target.files[0] })
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    setError("");
+
+    try {
+      const payload = {
+        email: formData.email,
+        role: isDoctor ? 'doctor' : 'patient'
+      };
+      
+      const res = await api.post('/auth/resend-otp', payload);
+      
+      if (res.data.success) {
+        setResendTimer(60); // 60 seconds cooldown
+      }
+    } catch (err) {
+      setError(err.message || "Failed to resend OTP. Please try again.");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setError("")
+
+    try {
+      const payload = {
+        email: formData.email,
+        otp: otp,
+        role: isDoctor ? 'doctor' : 'patient'
+      }
+
+      const res = await api.post('/auth/verify-otp', payload)
+
+      if (res.data.success) {
+        if (isDoctor) {
+          sessionStorage.setItem('token', res.data.token)
+          sessionStorage.setItem('role', res.data.role)
+          sessionStorage.setItem('user', JSON.stringify(res.data))
+          setIsSubmitted(true)
+          setVerificationStatus(res.data.verificationStatus || "pending")
+        } else {
+          login(res.data, res.data.token, res.data.role)
+        }
+      }
+    } catch (err) {
+      setError(err.message || "OTP Verification failed. Please try again.")
     }
   }
 
@@ -122,8 +184,12 @@ function RegisterContent() {
         console.log('Doctor Request Response:', res.data)
 
         if (res.data.success) {
-          setIsSubmitted(true)
-          setVerificationStatus(res.data.verificationStatus || "pending")
+          if (res.data.requireOtp) {
+            setStep(3)
+          } else {
+            setIsSubmitted(true)
+            setVerificationStatus(res.data.verificationStatus || "pending")
+          }
         }
       } else {
         const payload = {
@@ -137,7 +203,10 @@ function RegisterContent() {
           currentMedications: formData.medications,
           previousDiseaseHistory: formData.history,
           familyDiseaseHistory: formData.familyHistory,
-          emergencyContact: formData.emergency
+          emergencyContact: {
+            name: formData.emergencyName,
+            phone: formData.emergencyPhone
+          }
         }
 
         const res = await api.post('/auth/register', payload)
@@ -145,15 +214,12 @@ function RegisterContent() {
         console.log('Patient Registration Response:', res.data)
 
         if (res.data.success) {
-          console.log('Patient registered, role:', res.data.role)
-          sessionStorage.setItem('token', res.data.token)
-          sessionStorage.setItem('role', res.data.role)
-          sessionStorage.setItem('user', JSON.stringify(res.data))
-
-          console.log('Stored role in sessionStorage:', sessionStorage.getItem('role'))
-          console.log('Redirecting to:', `/${res.data.role}/dashboard`)
-
-          router.push(`/${res.data.role}/dashboard`)
+          if (res.data.requireOtp) {
+            setStep(3)
+          } else {
+            console.log('Patient registered, role:', res.data.role)
+            login(res.data, res.data.token, res.data.role)
+          }
         }
       }
     } catch (err) {
@@ -287,7 +353,7 @@ function RegisterContent() {
                 {error}
               </div>
             )}
-            <form onSubmit={handleRegister} className="space-y-6">
+            <form onSubmit={step === 3 ? handleVerifyOtp : handleRegister} className="space-y-6">
               {/* Basic Details - Both Roles */}
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
@@ -384,9 +450,15 @@ function RegisterContent() {
                     <Input id="familyHistory" value={formData.familyHistory} onChange={handleChange} placeholder="e.g. Diabetes in mother" />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="emergency">Emergency Contact</Label>
-                    <Input id="emergency" value={formData.emergency} onChange={handleChange} placeholder="Name and Phone Number" required />
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="emergencyName">Emergency Contact Name <span className="text-red-500">*</span></Label>
+                      <Input id="emergencyName" value={formData.emergencyName} onChange={handleChange} placeholder="e.g. Jane Doe" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="emergencyPhone">Emergency Contact Phone <span className="text-red-500">*</span></Label>
+                      <Input id="emergencyPhone" value={formData.emergencyPhone} onChange={handleChange} placeholder="e.g. +1 (555) 000-0000" required />
+                    </div>
                   </div>
 
                   <div className="flex gap-4 pt-4 border-t border-slate-100">
@@ -527,6 +599,47 @@ function RegisterContent() {
                   <div className="flex gap-4 pt-4 border-t border-slate-100">
                     <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)}>Back</Button>
                     <Button type="submit" className="w-full">Submit Verification Request</Button>
+                  </div>
+                </div>
+              )}
+
+              {/* OTP Verification Step */}
+              {step === 3 && (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto bg-teal-50 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                      <AlertCircle className="h-6 w-6 text-teal-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-900">Verify your email</h3>
+                    <p className="text-sm text-slate-500">We've sent a 6-digit verification code to <br /><span className="font-semibold text-slate-700">{formData.email}</span></p>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otp" className="text-center block">Verification Code</Label>
+                      <Input
+                        id="otp"
+                        type="text"
+                        maxLength="6"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value)}
+                        required
+                        className="text-center text-2xl tracking-widest h-14"
+                        placeholder="000000"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full h-12 text-lg">Verify & Continue</Button>
+                    <div className="text-center pt-2">
+                      <p className="text-sm text-slate-500 mb-2">Didn't receive the code?</p>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        onClick={handleResendOtp} 
+                        disabled={resendTimer > 0}
+                        className="text-teal-600 hover:text-teal-700 hover:bg-teal-50 w-full"
+                      >
+                        {resendTimer > 0 ? `Resend Code in ${resendTimer}s` : "Resend Verification Code"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}

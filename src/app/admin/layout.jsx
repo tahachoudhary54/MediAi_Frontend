@@ -104,6 +104,39 @@ export default function AdminLayout({ children }) {
         window.dispatchEvent(new CustomEvent("appointmentCancelledAdmin", { detail: data }));
       });
 
+      socket.on("new_medicine_order", (data) => {
+        console.log(`[Socket] Admin received new_medicine_order:`, data);
+        toast.success(`💊 New Pharmacy Order from ${data.patientName}`, {
+          duration: 8000,
+          position: "top-right",
+          style: { background: '#f0fdf4', color: '#166534', fontWeight: 'bold', border: '1px solid #22c55e' }
+        });
+        
+        try {
+          if ('speechSynthesis' in window) {
+            const msg = new SpeechSynthesisUtterance(`New pharmacy order received from ${data.patientName}.`);
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+          }
+        } catch (e) {
+          console.warn("Speech synthesis failed", e);
+        }
+      });
+
+      socket.on("new_appointment_payment", (data) => {
+        console.log(`[Socket] Admin received new_appointment_payment:`, data);
+        toast.success(`📅 Appointment Paid by ${data.patientName} (₹${data.amount})`, {
+          duration: 8000,
+          position: "top-right",
+          style: { background: '#f0fdf4', color: '#166534', fontWeight: 'bold', border: '1px solid #22c55e' }
+        });
+        window.dispatchEvent(new CustomEvent("refreshAdminAppointments"));
+      });
+
+      socket.on("new_transaction", () => {
+        window.dispatchEvent(new CustomEvent("refreshAdminTransactions"));
+      });
+
       socket.on("disconnect", () => {
         console.log("[Socket] Admin disconnected");
       });

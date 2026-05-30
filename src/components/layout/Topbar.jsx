@@ -107,7 +107,7 @@ export function Topbar({ role: propsRole }) {
   }
 
   return (
-    <header className="h-16 border-b border-slate-200 bg-white px-4 sm:px-8 flex items-center justify-between sticky top-0 z-40">
+    <header className="h-16 border-b border-slate-200 bg-white px-4 sm:px-8 flex items-center justify-between gap-6 sticky top-0 z-40">
       <div className="flex-1 max-w-md hidden sm:block">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />

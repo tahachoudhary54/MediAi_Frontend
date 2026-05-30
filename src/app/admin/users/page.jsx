@@ -364,9 +364,6 @@ export default function AdminUsers() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenView(user)} title="View Details">
                           <Eye className="w-4 h-4 text-slate-500" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(user)} title="Edit">
-                          <Edit2 className="w-4 h-4 text-blue-500" />
-                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(user)} title={user.accountStatus === "active" ? "Suspend User" : "Activate User"}>
                           {user.accountStatus === "active" ? <UserX className="w-4 h-4 text-amber-500" /> : <UserCheck className="w-4 h-4 text-emerald-500" />}
                         </Button>

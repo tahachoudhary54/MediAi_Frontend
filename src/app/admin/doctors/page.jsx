@@ -234,9 +234,6 @@ export default function AdminDoctors() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenView(doctor)} title="View Details">
                           <Eye className="w-4 h-4 text-slate-500" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doctor)} title="Edit">
-                          <Edit2 className="w-4 h-4 text-blue-500" />
-                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleOpenDelete(doctor)} title="Delete">
                           <Trash2 className="w-4 h-4 text-red-500" />
                         </Button>

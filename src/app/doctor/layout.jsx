@@ -129,6 +129,18 @@ export default function DoctorLayout({ children }) {
       socket.on("disconnect", () => {
         console.log("[Socket] Doctor disconnected");
       });
+
+      socket.on("userProfileUpdated", (updatedUser) => {
+        console.log(`[Socket] Doctor received userProfileUpdated event:`, updatedUser);
+        const stored = JSON.parse(sessionStorage.getItem("user") || "{}");
+        const base = stored.user || stored;
+        if (base._id === updatedUser._id || base.id === updatedUser._id) {
+           const updatedData = { ...base, ...updatedUser };
+           sessionStorage.setItem("user", JSON.stringify(updatedData));
+           window.dispatchEvent(new CustomEvent("profileUpdated"));
+           toast.success("Your profile was updated by an admin");
+        }
+      });
     }
 
     return () => {

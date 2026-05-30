@@ -43,6 +43,9 @@ export default function AdminAppointments() {
   useEffect(() => {
     fetchAppointments()
 
+    const handleRefresh = () => fetchAppointments()
+    window.addEventListener("refreshAdminAppointments", handleRefresh)
+
     const handleCancelledEvent = () => {
       console.log("[AdminAppointments] Received appointmentCancelledAdmin custom event. Hot-reloading...");
       fetchAppointments()

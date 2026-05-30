@@ -31,6 +31,10 @@ export default function AdminTransactions() {
 
   useEffect(() => {
     fetchTransactions()
+    
+    const handleRefresh = () => fetchTransactions()
+    window.addEventListener("refreshAdminTransactions", handleRefresh)
+    return () => window.removeEventListener("refreshAdminTransactions", handleRefresh)
   }, [])
 
   const filteredTransactions = useMemo(() => {
