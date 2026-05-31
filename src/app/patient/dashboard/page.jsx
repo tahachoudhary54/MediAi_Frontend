@@ -50,13 +50,14 @@ export default function PatientDashboard() {
         }
       }
 
-      const [apptsRes, remsRes, repsRes, notifsRes, vitalsRes, activityRes] = await Promise.allSettled([
+      const [apptsRes, remsRes, repsRes, notifsRes, vitalsRes, activityRes, meRes] = await Promise.allSettled([
         api.get('/appointments/patient'),
         api.get('/medicines/patient'),
         api.get('/reports/patient'),
         api.get('/notifications'),
         api.get('/patient/vitals/latest'),
-        api.get('/patient/activity/weekly')
+        api.get('/patient/activity/weekly'),
+        api.get('/auth/me')
       ])
 
       if (apptsRes.status === 'fulfilled' && apptsRes.value.data.success) {

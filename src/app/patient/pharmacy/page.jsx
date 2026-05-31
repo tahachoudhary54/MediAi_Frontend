@@ -37,6 +37,17 @@ export default function PatientPharmacy() {
 
   useEffect(() => {
     fetchOrders()
+
+    const handleOrderUpdate = () => {
+      console.log("[PatientPharmacy] Received orderStatusUpdated custom event. Hot-reloading...");
+      fetchOrders()
+    }
+
+    window.addEventListener("orderStatusUpdated", handleOrderUpdate)
+
+    return () => {
+      window.removeEventListener("orderStatusUpdated", handleOrderUpdate)
+    }
   }, [])
 
   const handleAddToCart = () => {

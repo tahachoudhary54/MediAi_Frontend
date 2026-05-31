@@ -108,7 +108,7 @@ function RegisterContent() {
         setResendTimer(60); // 60 seconds cooldown
       }
     } catch (err) {
-      setError(err.message || "Failed to resend OTP. Please try again.");
+      setError(err.response?.data?.message || err.message || "Failed to resend OTP. Please try again.");
     }
   };
 
@@ -137,7 +137,7 @@ function RegisterContent() {
         }
       }
     } catch (err) {
-      setError(err.message || "OTP Verification failed. Please try again.")
+      setError(err.response?.data?.message || err.message || "OTP Verification failed. Please try again.")
     }
   }
 
@@ -171,14 +171,10 @@ function RegisterContent() {
         let res;
         if (isReverifying) {
           // Call reverify endpoint
-          res = await api.put('/auth/doctor/reverify', payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          })
+          res = await api.put('/auth/doctor/reverify', payload)
         } else {
           // Call register endpoint
-          res = await api.post('/auth/doctor/register', payload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          })
+          res = await api.post('/auth/doctor/register', payload)
         }
 
         console.log('Doctor Request Response:', res.data)
@@ -223,9 +219,38 @@ function RegisterContent() {
         }
       }
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.")
+      console.error("Registration error:", err)
+      const errorMsg = err.response?.data?.message || err.message || "Registration failed. Please try again."
+      setError(errorMsg)
     }
   }
+
+  // Effect to poll for verification status changes while on success screen
+  useEffect(() => {
+    let interval;
+    if (isSubmitted && isDoctor && (verificationStatus === "pending" || verificationStatus === "Pending")) {
+      interval = setInterval(async () => {
+        try {
+          const res = await api.get('/auth/me')
+          if (res.data.success) {
+            const status = res.data.verificationStatus || res.data.data?.verificationStatus
+            if (status && status !== verificationStatus) {
+              setVerificationStatus(status)
+              // Update session storage too
+              const stored = sessionStorage.getItem('user')
+              if (stored) {
+                const parsed = JSON.parse(stored)
+                if (parsed.user) parsed.user.verificationStatus = status
+                else parsed.verificationStatus = status
+                sessionStorage.setItem('user', JSON.stringify(parsed))
+              }
+            }
+          }
+        } catch (e) { }
+      }, 10000) // Poll every 10s
+    }
+    return () => clearInterval(interval)
+  }, [isSubmitted, isDoctor, verificationStatus])
 
   // Prevent rendering if role is admin (will be redirected by useEffect)
   if (role === "admin") {
@@ -300,33 +325,6 @@ function RegisterContent() {
       </div>
     )
   }
-
-  // Effect to poll for verification status changes while on success screen
-  useEffect(() => {
-    let interval;
-    if (isSubmitted && isDoctor && (verificationStatus === "pending" || verificationStatus === "Pending")) {
-      interval = setInterval(async () => {
-        try {
-          const res = await api.get('/auth/me')
-          if (res.data.success) {
-            const status = res.data.verificationStatus || res.data.data?.verificationStatus
-            if (status && status !== verificationStatus) {
-              setVerificationStatus(status)
-              // Update session storage too
-              const stored = sessionStorage.getItem('user')
-              if (stored) {
-                const parsed = JSON.parse(stored)
-                if (parsed.user) parsed.user.verificationStatus = status
-                else parsed.verificationStatus = status
-                sessionStorage.setItem('user', JSON.stringify(parsed))
-              }
-            }
-          }
-        } catch (e) { }
-      }, 10000) // Poll every 10s
-    }
-    return () => clearInterval(interval)
-  }, [isSubmitted, isDoctor, verificationStatus])
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 py-12">

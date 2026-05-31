@@ -32,6 +32,17 @@ export default function AdminPharmacy() {
 
   useEffect(() => {
     fetchOrders()
+
+    const handleRefreshOrders = () => {
+      console.log("[AdminPharmacy] Received refreshAdminPharmacyOrders custom event. Hot-reloading...");
+      fetchOrders()
+    }
+
+    window.addEventListener("refreshAdminPharmacyOrders", handleRefreshOrders)
+
+    return () => {
+      window.removeEventListener("refreshAdminPharmacyOrders", handleRefreshOrders)
+    }
   }, [])
 
   const handleUpdateStatus = async (id, newStatus) => {

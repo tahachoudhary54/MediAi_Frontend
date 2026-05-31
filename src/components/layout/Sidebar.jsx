@@ -84,6 +84,13 @@ export function Sidebar({ role }) {
       { name: "Support Tickets", href: "/admin/support-tickets", icon: LifeBuoy },
       { name: "System Settings", href: "/admin/settings", icon: Settings },
       { name: "Audit Logs", href: "/admin/audit-logs", icon: FileClock },
+    ],
+    super_admin: [
+      { name: "Platform Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
+      { name: "Manage Admins", href: "/super-admin/admins", icon: ShieldCheck },
+      { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
+      { name: "Platform Analytics", href: "/super-admin/analytics", icon: Activity },
+      { name: "Global Settings", href: "/super-admin/settings", icon: Settings },
     ]
   }
 

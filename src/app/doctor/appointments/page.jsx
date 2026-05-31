@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
-import { Calendar, Clock, Video, MapPin, CheckCircle2, AlertCircle, XCircle } from "lucide-react"
+import { Calendar, Clock, Video, MapPin, CheckCircle2, AlertCircle, XCircle, RefreshCw } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -57,21 +57,22 @@ export default function DoctorAppointments() {
     try {
       await api.put(`/appointments/${id}`, { status })
       fetchAppointments()
-      toast.success(`Appointment ${status} successfully.`)
+      const statusLabel = status === 'approved_pending_payment' ? 'approved (pending payment)' : status;
+      toast.success(`Appointment status updated to ${statusLabel} successfully.`)
     } catch (err) {
-      toast.error("Failed to update status")
+      toast.error(err.response?.data?.message || "Failed to update status")
     }
   }
 
   const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this appointment?")) return;
+    if (!confirm("Are you sure you want to cancel this appointment?")) return;
     try {
       await api.put(`/appointments/${id}`, { status: 'cancelled' })
       fetchAppointments()
-      toast.success("Appointment deleted successfully.")
+      toast.success("Appointment cancelled successfully.")
     } catch (err) {
-      console.error("Failed to delete appointment", err)
-      toast.error("Failed to delete appointment")
+      console.error("Failed to cancel appointment", err)
+      toast.error(err.response?.data?.message || "Failed to cancel appointment")
     }
   }
 
@@ -92,7 +93,29 @@ export default function DoctorAppointments() {
       fetchAppointments()
       toast.success("Appointment rescheduled and patient notified")
     } catch (err) {
-      toast.error("Failed to reschedule")
+      toast.error(err.response?.data?.message || "Failed to reschedule")
+    }
+  }
+
+  const getStatusBadge = (status, paymentStatus) => {
+    switch (status) {
+      case 'scheduled':
+      case 'confirmed':
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">Confirmed & Scheduled</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">New Request</Badge>;
+      case 'pending_reschedule_by_doctor':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Waiting for Patient Response</Badge>;
+      case 'pending_reschedule_by_patient':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200">Patient Rescheduled (Action Needed)</Badge>;
+      case 'approved_pending_payment':
+        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200">Approved (Awaiting Payment)</Badge>;
+      case 'completed':
+        return <Badge className="bg-slate-100 text-slate-800 border-slate-200">Completed</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Cancelled</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
   }
 
@@ -120,22 +143,20 @@ export default function DoctorAppointments() {
             <p className="text-slate-500 text-center py-12">Loading...</p>
           ) : appointments.length > 0 ? (
             appointments.map(apt => (
-              <Card key={apt._id}>
+              <Card key={apt._id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className="h-12 w-12 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600">
+                      <div className="h-12 w-12 rounded-full bg-teal-100 flex items-center justify-center font-bold text-teal-600 shrink-0">
                         {apt.patient?.fullName?.charAt(0) || "P"}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <h4 className="font-semibold text-slate-900 text-lg">{apt.patient?.fullName}</h4>
-                          <Badge variant={
-                            apt.status === 'confirmed' ? 'success' :
-                              apt.status === 'pending' ? 'warning' : 'destructive'
-                          }>
-                            {apt.status}
-                          </Badge>
+                          {getStatusBadge(apt.status, apt.paymentStatus)}
+                          {apt.paymentStatus === 'paid' && (
+                            <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Paid</Badge>
+                          )}
                         </div>
                         <p className="text-sm text-slate-600 mb-2">{apt.reason}</p>
                         <div className="flex flex-wrap gap-3 text-sm font-medium">
@@ -158,15 +179,47 @@ export default function DoctorAppointments() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                      {apt.status === 'pending' && (
-                        <Button onClick={() => handleStatusChange(apt._id, 'confirmed')} size="sm" className="bg-emerald-600 hover:bg-emerald-700">Confirm</Button>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+                      {(apt.status === 'pending' || apt.status === 'pending_reschedule_by_patient') && (
+                        <Button 
+                          onClick={() => handleStatusChange(apt._id, 'approved_pending_payment')} 
+                          size="sm" 
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm"
+                        >
+                          Approve
+                        </Button>
                       )}
+                      
+                      {['pending', 'pending_reschedule_by_patient'].includes(apt.status) && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleOpenReschedule(apt)}
+                          className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                        >
+                          Reschedule
+                        </Button>
+                      )}
+
+                      {apt.status === 'scheduled' && (
+                        <Button
+                          onClick={() => handleStatusChange(apt._id, 'completed')}
+                          size="sm"
+                          className="bg-slate-900 hover:bg-slate-800 text-white"
+                        >
+                          Complete
+                        </Button>
+                      )}
+
                       {apt.status !== 'cancelled' && apt.status !== 'completed' && (
-                        <>
-                          <Button variant="outline" size="sm" onClick={() => handleOpenReschedule(apt)}>Reschedule</Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(apt._id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">Delete</Button>
-                        </>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDelete(apt._id)} 
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          Cancel
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -197,8 +250,8 @@ export default function DoctorAppointments() {
                 <h3 className="font-semibold">Doctor Guidelines</h3>
               </div>
               <ul className="text-sm space-y-2 text-slate-300">
-                <li>• Always notify patients via email when rescheduling.</li>
-                <li>• Confirm pending requests within 24 hours.</li>
+                <li>• Approve pending requests when you are available.</li>
+                <li>• Suggest a reschedule if you are busy.</li>
                 <li>• Mark appointments as completed after consultation.</li>
               </ul>
             </CardContent>
@@ -230,17 +283,18 @@ export default function DoctorAppointments() {
             />
           </div>
           <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 animate-pulse shrink-0" />
             <p className="text-xs text-amber-800">
-              Note: Rescheduling will send an automated email notification to the patient with the new timings.
+              Note: Rescheduling will notify the patient with the new timings. They can accept your reschedule or propose a new one.
             </p>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setIsRescheduleModalOpen(false)}>Cancel</Button>
-            <Button type="submit">Update & Notify Patient</Button>
+            <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white">Update & Notify Patient</Button>
           </div>
         </form>
       </Modal>
     </div>
   )
 }
+

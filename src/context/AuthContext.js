@@ -168,8 +168,9 @@ export function AuthProvider({ children }) {
     setRole(userRole)
     setUser(userData)
     
-    console.log(`[AuthContext] Redirecting to /${userRole}/dashboard`);
-    router.push(`/${userRole}/dashboard`)
+    const routePath = userRole.replace('_', '-')
+    console.log(`[AuthContext] Redirecting to /${routePath}/dashboard`);
+    router.push(`/${routePath}/dashboard`)
   }, [router])
 
   const logout = useCallback(() => {

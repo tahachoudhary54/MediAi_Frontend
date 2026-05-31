@@ -13,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [resetToken, setResetToken] = useState("")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,8 +21,9 @@ export default function ForgotPasswordPage() {
     try {
       const response = await api.post('/auth/forgot-password', { email })
       if (response.data.success) {
+        setResetToken(response.data.token || "")
         setIsSubmitted(true)
-        toast.success("Reset link generated (Mock)")
+        toast.success("Reset link generated successfully")
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send reset link")
@@ -34,23 +36,30 @@ export default function ForgotPasswordPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full">
-          <Card className="text-center">
+          <Card className="text-center shadow-md border-slate-200">
             <CardHeader>
-              <div className="mx-auto w-12 h-12 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mb-4 border border-emerald-100">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
-              <CardTitle>Check your email</CardTitle>
-              <CardDescription>
-                We've sent a password reset link to <span className="font-medium text-slate-900">{email}</span>.
+              <CardTitle className="text-2xl font-bold text-slate-900">Check your email</CardTitle>
+              <CardDescription className="text-slate-500">
+                A password reset link has been generated for <span className="font-semibold text-slate-900">{email}</span>.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-500">
-                (Mocking: Since this is a demo, check the backend console for the token or use the redirect below.)
+            <CardContent className="space-y-4">
+              <p className="text-sm text-slate-600">
+                In a production environment, this email would contain a secure token link. For this demo, you can click the button below to reset your password directly:
               </p>
+              {resetToken && (
+                <Button asChild className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-11">
+                  <Link href={`/auth/reset-password?token=${resetToken}`}>
+                    Reset Password Direct Link
+                  </Link>
+                </Button>
+              )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
-              <Button asChild variant="outline" className="w-full">
+            <CardFooter className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+              <Button asChild variant="outline" className="w-full h-11">
                 <Link href="/auth/login">Back to Login</Link>
               </Button>
             </CardFooter>

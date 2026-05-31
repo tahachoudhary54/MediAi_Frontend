@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input, Label } from "@/components/ui/input"
 import { Modal } from "@/components/ui/modal"
-import { Calendar as CalendarIcon, Clock, Video, MapPin, Search, Plus, Filter, XCircle, MessageCircle, BellRing, X } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, Video, MapPin, Search, Plus, Filter, XCircle, MessageCircle, BellRing, X, AlertCircle } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
@@ -23,6 +23,11 @@ export default function AppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [chatNowAlert, setChatNowAlert] = useState(null) // { doctorName, doctorId, aptId }
   const alertedAptIds = useRef(new Set())
+
+  // Patient Rescheduling modal states
+  const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState(null)
+  const [rescheduleData, setRescheduleData] = useState({ date: "", time: "" })
 
   const [formData, setFormData] = useState({
     doctor: "",
@@ -191,28 +196,68 @@ export default function AppointmentsPage() {
       }
 
       const res = await api.post('/appointments', payload)
-      const aptId = res.data.data._id
+      if (res.data.success) {
+        setIsBookingModalOpen(false)
+        setFormData({
+          doctor: "", date: "", time: "", consultationType: "video", reason: ""
+        })
+        toast.success("Appointment requested successfully! Waiting for doctor's approval.")
+        fetchAppointments()
+      }
+    } catch (err) {
+      console.error("Failed to book appointment", err)
+      toast.error(err.response?.data?.message || err.message || "Failed to book appointment")
+    }
+  }
 
-      toast.success("Slot secured, redirecting to payment...")
-      
-      // Call payment checkout endpoint
+  const handleAcceptReschedule = async (id) => {
+    try {
+      await api.put(`/appointments/${id}`, { status: 'approved_pending_payment' })
+      toast.success("Schedule accepted! Please complete your payment now.")
+      fetchAppointments()
+    } catch (err) {
+      console.error("Failed to accept schedule", err)
+      toast.error(err.response?.data?.message || "Failed to accept schedule")
+    }
+  }
+
+  const handlePayment = async (aptId) => {
+    try {
+      toast.success("Redirecting to checkout...")
       const paymentRes = await api.post('/payment/checkout', {
         itemId: aptId,
         type: 'appointment'
       })
 
       if (paymentRes.data.success) {
-        setIsBookingModalOpen(false)
-        setFormData({
-          doctor: "", date: "", time: "", consultationType: "video", reason: ""
-        })
         router.push(paymentRes.data.data.url)
       } else {
         toast.error("Failed to initiate payment")
       }
     } catch (err) {
-      console.error("Failed to book appointment", err)
-      toast.error(err.response?.data?.message || err.message || "Failed to book appointment")
+      console.error("Payment error:", err)
+      toast.error(err.response?.data?.message || "Failed to process payment request")
+    }
+  }
+
+  const handleOpenReschedule = (appointment) => {
+    setSelectedAppointment(appointment)
+    setRescheduleData({
+      date: new Date(appointment.date).toISOString().split('T')[0],
+      time: appointment.time
+    })
+    setIsRescheduleModalOpen(true)
+  }
+
+  const handleRescheduleSubmit = async (e) => {
+    e.preventDefault()
+    try {
+      await api.put(`/appointments/${selectedAppointment._id}`, rescheduleData)
+      setIsRescheduleModalOpen(false)
+      fetchAppointments()
+      toast.success("Suggested new schedule to doctor.")
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to reschedule")
     }
   }
 
@@ -228,8 +273,30 @@ export default function AppointmentsPage() {
     }
   }
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'scheduled':
+      case 'confirmed':
+        return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-medium">Confirmed & Scheduled</Badge>;
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-medium">Awaiting Doctor Approval</Badge>;
+      case 'pending_reschedule_by_doctor':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200 font-medium animate-pulse">Doctor Rescheduled</Badge>;
+      case 'pending_reschedule_by_patient':
+        return <Badge className="bg-purple-100 text-purple-800 border-purple-200 font-medium">Waiting for Doctor Response</Badge>;
+      case 'approved_pending_payment':
+        return <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 font-medium">Approved (Awaiting Payment)</Badge>;
+      case 'completed':
+        return <Badge className="bg-slate-100 text-slate-800 border-slate-200 font-medium">Completed</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-100 text-red-800 border-red-200 font-medium">Cancelled</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  }
+
   const filteredAppointments = appointments.filter(apt => {
-    const isUpcoming = apt.status === 'scheduled' || apt.status === 'pending' || apt.status === 'confirmed';
+    const isUpcoming = ['pending', 'pending_reschedule_by_doctor', 'pending_reschedule_by_patient', 'approved_pending_payment', 'scheduled', 'confirmed'].includes(apt.status);
     const isPast = apt.status === 'completed' || apt.status === 'cancelled';
 
     const matchesTab = activeTab === "upcoming" ? isUpcoming : isPast;
@@ -305,7 +372,7 @@ export default function AppointmentsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Appointments</h1>
           <p className="text-slate-500">Manage your upcoming and past consultations.</p>
         </div>
-        <Button onClick={() => setIsBookingModalOpen(true)} className="gap-2">
+        <Button onClick={() => setIsBookingModalOpen(true)} className="gap-2 bg-teal-600 hover:bg-teal-700 text-white">
           <Plus className="h-4 w-4" /> Book Appointment
         </Button>
       </div>
@@ -373,25 +440,12 @@ export default function AppointmentsPage() {
                   <div>
                     <div className="flex flex-wrap items-center gap-3 mb-2">
                       <h3 className="text-xl font-semibold text-slate-900">Dr. {apt.doctor?.fullName || 'Unknown'}</h3>
-                      <Badge variant={
-                        apt.status === "confirmed" ? "success" :
-                          apt.status === "scheduled" ? "default" :
-                            apt.status === "pending" ? "warning" :
-                              apt.status === "cancelled" ? "destructive" : "secondary"
-                      }>
-                        {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                      </Badge>
+                      {getStatusBadge(apt.status)}
                       
                       {apt.paymentStatus === 'paid' ? (
                         <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Paid ₹{apt.amount || 500}</Badge>
                       ) : (
                         <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Payment Pending</Badge>
-                      )}
-
-                      {apt.updatedAt && new Date(apt.updatedAt) > new Date(apt.createdAt) && (
-                        <Badge variant="warning" className="text-xs">
-                          Updated by Doctor
-                        </Badge>
                       )}
                     </div>
                     <p className="text-slate-600">{apt.doctor?.specialization}</p>
@@ -410,27 +464,74 @@ export default function AppointmentsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:items-end gap-3 sm:pl-6 sm:border-l border-slate-100">
-                    {(apt.status === "confirmed" || apt.status === "pending" || apt.status === "scheduled") ? (
-                      <div className="flex flex-col gap-2">
+                  <div className="flex flex-col sm:items-end gap-3 sm:pl-6 sm:border-l border-slate-100 shrink-0 min-w-[150px]">
+                    {/* Collaborative actions */}
+                    {apt.status === "pending_reschedule_by_doctor" && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <Button 
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs"
+                          onClick={() => handleAcceptReschedule(apt._id)}
+                        >
+                          Accept Suggested Time
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          className="w-full text-xs font-medium border-slate-200 hover:bg-slate-50"
+                          onClick={() => handleOpenReschedule(apt)}
+                        >
+                          Suggest New Time
+                        </Button>
+                      </div>
+                    )}
+
+                    {apt.status === "approved_pending_payment" && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <Button 
+                          className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 text-white font-bold animate-pulse hover:from-teal-600 hover:to-emerald-700 text-sm shadow-md"
+                          onClick={() => handlePayment(apt._id)}
+                        >
+                          Pay Now to Book
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Standard Action buttons */}
+                    {(apt.status === "confirmed" || apt.status === "scheduled") && (
+                      <div className="flex flex-col gap-2 w-full">
                         <Button
-                          className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700"
+                          className="w-full bg-teal-600 hover:bg-teal-700"
                           onClick={() => window.location.href = `/patient/chat?doctorId=${apt.doctor?._id}`}
                         >
                           Chat
                         </Button>
                         {apt.consultationType === "online" && (
                           <Button
-                            className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700"
+                            className="w-full bg-indigo-600 hover:bg-indigo-700"
                             onClick={() => window.location.href = `/patient/video-call`}
                           >
                             <Video className="h-4 w-4 mr-2" /> Video Call
                           </Button>
                         )}
-                        <Button variant="outline" onClick={() => handleCancelAppointment(apt._id)} className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50">Cancel</Button>
                       </div>
-                    ) : (
-                      <Button className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800" onClick={() => setIsBookingModalOpen(true)}>Book Follow-up</Button>
+                    )}
+
+                    {apt.status !== 'cancelled' && apt.status !== 'completed' && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleCancelAppointment(apt._id)} 
+                        className="w-full text-xs text-red-600 border-red-100 hover:text-red-700 hover:bg-red-50"
+                      >
+                        Cancel Appointment
+                      </Button>
+                    )}
+
+                    {(apt.status === 'completed' || apt.status === 'cancelled') && (
+                      <Button 
+                        className="w-full bg-slate-900 text-white hover:bg-slate-800" 
+                        onClick={() => setIsBookingModalOpen(true)}
+                      >
+                        Book Follow-up
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -451,6 +552,7 @@ export default function AppointmentsPage() {
         )}
       </div>
 
+      {/* Booking Modal */}
       <Modal isOpen={isBookingModalOpen} onClose={() => setIsBookingModalOpen(false)} title="Book Appointment">
         <form onSubmit={handleBookAppointment} className="space-y-4">
           <div className="space-y-2">
@@ -528,7 +630,43 @@ export default function AppointmentsPage() {
           </div>
           <div className="pt-4 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setIsBookingModalOpen(false)}>Cancel</Button>
-            <Button type="submit">Book Appointment</Button>
+            <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white font-medium">Book Appointment</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Patient Reschedule Suggestion Modal */}
+      <Modal isOpen={isRescheduleModalOpen} onClose={() => setIsRescheduleModalOpen(false)} title="Suggest Alternative Timing">
+        <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="patient-res-date">Preferred Date</Label>
+            <Input
+              id="patient-res-date"
+              type="date"
+              value={rescheduleData.date}
+              onChange={e => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="patient-res-time">Preferred Time</Label>
+            <Input
+              id="patient-res-time"
+              type="time"
+              value={rescheduleData.time}
+              onChange={e => setRescheduleData({ ...rescheduleData, time: e.target.value })}
+              required
+            />
+          </div>
+          <div className="bg-teal-50 p-3 rounded-lg border border-teal-100 flex items-start gap-2 animate-pulse">
+            <CalendarIcon className="h-4 w-4 text-teal-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-teal-800">
+              Note: The doctor will see this timing proposal and can approve it to prompt your checkout payment.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => setIsRescheduleModalOpen(false)}>Cancel</Button>
+            <Button type="submit" className="bg-teal-600 hover:bg-teal-700 text-white">Suggest to Doctor</Button>
           </div>
         </form>
       </Modal>
@@ -536,3 +674,4 @@ export default function AppointmentsPage() {
     </div>
   )
 }
+

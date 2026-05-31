@@ -72,6 +72,8 @@ export default function PatientLayout({ children }) {
       patientSocket.off("appointmentCancelled");
       patientSocket.off("doctorChatRequest");
       patientSocket.off("userProfileUpdated");
+      patientSocket.off("orderStatusUpdated");
+      patientSocket.off("orderDeletedPatient");
       patientSocket.off("disconnect");
 
       patientSocket.on("connect", () => {
@@ -130,6 +132,30 @@ export default function PatientLayout({ children }) {
            window.dispatchEvent(new CustomEvent("profileUpdated"));
            toast.success("Your profile was updated by an admin");
         }
+      });
+
+      patientSocket.on("orderStatusUpdated", (updatedOrder) => {
+        console.log(`[Socket] Patient received orderStatusUpdated event:`, updatedOrder);
+        const orderIdShort = updatedOrder._id.substring(updatedOrder._id.length - 8).toUpperCase();
+        const displayStatus = updatedOrder.status.replace(/_/g, ' ').toUpperCase();
+        
+        toast.success(`💊 Order #${orderIdShort} status updated to: ${displayStatus}`, {
+          duration: 6000,
+          position: "top-right",
+          style: { background: '#f0fdf4', color: '#166534', fontWeight: 'bold', border: '1px solid #22c55e' }
+        });
+        
+        // Dispatch custom event to let active sub-pages (like pharmacy delivery) hot-reload their list!
+        window.dispatchEvent(new CustomEvent("orderStatusUpdated", { detail: updatedOrder }));
+      });
+
+      patientSocket.on("orderDeletedPatient", (orderId) => {
+        console.log(`[Socket] Patient received orderDeletedPatient event:`, orderId);
+        toast.error("An order was deleted or cancelled", {
+          duration: 5000,
+          position: "top-right"
+        });
+        window.dispatchEvent(new CustomEvent("orderStatusUpdated")); // Hot-reloads page orders
       });
 
       patientSocket.on("doctorFollowUpMessage", (data) => {

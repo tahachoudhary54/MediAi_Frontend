@@ -121,6 +121,13 @@ export default function AdminLayout({ children }) {
         } catch (e) {
           console.warn("Speech synthesis failed", e);
         }
+        // Dispatch custom event to let active sub-pages (like pharmacy orders) hot-reload their list!
+        window.dispatchEvent(new CustomEvent("refreshAdminPharmacyOrders"));
+      });
+
+      socket.on("orderDeletedAdmin", (orderId) => {
+        console.log(`[Socket] Admin received orderDeletedAdmin:`, orderId);
+        window.dispatchEvent(new CustomEvent("refreshAdminPharmacyOrders"));
       });
 
       socket.on("new_appointment_payment", (data) => {

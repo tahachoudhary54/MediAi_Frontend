@@ -32,7 +32,8 @@ function LoginContent() {
       const demoCredentials = {
         patient: { email: 'patient@example.com', password: 'password123', role: 'patient' },
         doctor: { email: 'doctor@example.com', password: 'password123', role: 'doctor' },
-        admin: { email: 'admin@example.com', password: 'password123', adminAccessCode: 'super', role: 'admin' }
+        admin: { email: 'admin@example.com', password: 'password123', adminAccessCode: 'super', role: 'admin' },
+        super_admin: { email: 'superadmin@gmail.com', password: 'superadmin123', adminAccessCode: 'master', role: 'super_admin' }
       }
 
       const credentials = demoCredentials[selectedRole]
@@ -57,7 +58,7 @@ function LoginContent() {
       const payload = { email, password, role }
       console.log("[LoginPage] Submitting login with role:", role);
 
-      if (role === "admin") {
+      if (role === "admin" || role === "super_admin") {
         payload.adminAccessCode = adminAccessCode
       }
 
@@ -113,6 +114,12 @@ function LoginContent() {
               >
                 Admin
               </button>
+              <button
+                onClick={() => { setRole("super_admin"); setError(""); }}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${role === "super_admin" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+              >
+                Super Admin
+              </button>
             </div>
 
             {error && (
@@ -157,7 +164,7 @@ function LoginContent() {
                 </div>
               </div>
 
-              {role === "admin" && (
+              { (role === "admin" || role === "super_admin") && (
                 <div className="space-y-2">
                   <Label htmlFor="accessCode">Admin Access Code</Label>
                   <div className="relative">
@@ -201,7 +208,7 @@ function LoginContent() {
               </div>
             </div>
 
-            <div className="mt-6 grid grid-cols-3 gap-2">
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Button variant="outline" size="sm" onClick={() => handleDemoLogin('patient')} className="text-xs">
                 Demo Patient
               </Button>
@@ -210,6 +217,9 @@ function LoginContent() {
               </Button>
               <Button variant="outline" size="sm" onClick={() => handleDemoLogin('admin')} className="text-xs">
                 Demo Admin
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDemoLogin('super_admin')} className="text-xs">
+                Demo SA
               </Button>
             </div>
           </CardContent>
