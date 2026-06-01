@@ -240,27 +240,27 @@ export function ChatWindow({
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-200 shrink-0">
         <form onSubmit={handleSend} className="flex items-center gap-2">
-                      {/* Image upload button */}
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              style={{ display: "none" }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = () => {
-                  // Send the image as a data URL via onSendMessage if supported
-                  // Here we call onSendMessage with empty text; image handling can be added later
-                  onSendMessage(reader.result);
-                };
-                reader.readAsDataURL(file);
-              }}
-            />
-                        <Button type="button" variant="ghost" size="icon" className="text-black shrink-0 bg-green-300 rounded-full" disabled={disabled} onClick={() => fileInputRef.current?.click()} title="Add image">
-              <Image className="h-5 w-5" />
-            </Button>
+          {/* Image upload button */}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                // Send the image as a data URL via onSendMessage if supported
+                // Here we call onSendMessage with empty text; image handling can be added later
+                onSendMessage(reader.result);
+              };
+              reader.readAsDataURL(file);
+            }}
+          />
+          <Button type="button" variant="ghost" size="icon" className="text-black shrink-0 bg-green-300 rounded-full" disabled={disabled} onClick={() => fileInputRef.current?.click()} title="Add image">
+            <Image className="h-5 w-5" />
+          </Button>
 
           <Input
             ref={inputRef}
@@ -302,8 +302,8 @@ export function ChatWindow({
               <Mic className="h-5 w-5" />
             </Button>
           )}
-                  </form>
-          <div className="text-sm text-slate-500 mt-2 text-left">Chat Consultation</div>
+        </form>
+        <div className="text-sm text-slate-500 mt-2 text-left">Chat Consultation</div>
       </div>
     </div>
   )

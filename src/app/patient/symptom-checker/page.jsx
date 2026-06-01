@@ -7,7 +7,6 @@ import { Activity, Plus, AlertCircle, Stethoscope, Calendar, MessageSquare, Hist
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import api from "@/lib/api";
-import MediaUploadButton from "@/app/components/MediaUploadButton";
 import { Modal } from "@/components/ui/modal";
 
 export default function SymptomChecker() {
@@ -125,7 +124,7 @@ export default function SymptomChecker() {
     }
   };
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, imageFile) => {
     setError("");
     const lowerContent = content.toLowerCase();
     const triggerWords = ["i'd like to consult a doctor", "consult doctor", "find doctor", "book appointment"];
@@ -134,8 +133,29 @@ export default function SymptomChecker() {
       handleConsultDoctor(content);
       return;
     }
-    // Snapshot & clear image URL before async operations
-    const imageUrl = uploadedImageUrl;
+
+    setIsTyping(true);
+    let imageUrl = uploadedImageUrl;
+
+    // If a new image file was passed, upload it first
+    if (imageFile) {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+      try {
+        const uploadRes = await api.post(`/ai/upload-symptom-image`, formData);
+        if (uploadRes.data.success) {
+          imageUrl = uploadRes.data.data.url;
+        } else {
+          throw new Error("Upload failed");
+        }
+      } catch (err) {
+        console.error("Upload Error:", err);
+        setError("Image upload failed. Please try again.");
+        setIsTyping(false);
+        return;
+      }
+    }
+
     setUploadedImageUrl(null);
     setUploadKey(prev => prev + 1);
 
@@ -145,7 +165,6 @@ export default function SymptomChecker() {
       : { sender: "user", content };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
-    setIsTyping(true);
     const previousMessages = messages.map(m => ({
       role: m.sender === 'ai' ? 'assistant' : 'user',
       content: m.content
@@ -255,11 +274,6 @@ export default function SymptomChecker() {
               <Button variant="outline" size="sm" onClick={startNewChat} className="gap-2">
                 <Plus className="h-4 w-4" /> New Chat
               </Button>
-              <MediaUploadButton
-                key={uploadKey}
-                onUpload={handleUpload}
-                onClear={() => setUploadedImageUrl(null)}
-              />
             </div>
           }
         />

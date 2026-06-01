@@ -47,9 +47,6 @@ export default function MediaUploadButton({ onUpload, onClear }) {
     setUploading(true);
     try {
       const res = await api.post(`/ai/upload-symptom-image`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         onUploadProgress: (evt) => {
           if (evt.total) {
             setProgress(Math.round((evt.loaded / evt.total) * 100));
