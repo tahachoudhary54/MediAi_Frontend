@@ -144,6 +144,11 @@ export default function AdminLayout({ children }) {
         window.dispatchEvent(new CustomEvent("refreshAdminTransactions"));
       });
 
+      socket.on("medicineStockUpdated", () => {
+        console.log(`[Socket] Admin received medicineStockUpdated`);
+        window.dispatchEvent(new CustomEvent("medicineStockUpdated"));
+      });
+
       socket.on("disconnect", () => {
         console.log("[Socket] Admin disconnected");
       });

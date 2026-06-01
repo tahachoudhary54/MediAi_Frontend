@@ -29,7 +29,8 @@ import {
   Megaphone,
   LifeBuoy,
   FileClock,
-  Truck
+  Truck,
+  BriefcaseMedical
 } from "lucide-react"
 
 
@@ -79,16 +80,19 @@ export function Sidebar({ role }) {
       { name: "Appointments", href: "/admin/appointments", icon: Calendar },
       { name: "Reports", href: "/admin/reports", icon: FileText },
       { name: "Pharmacy Orders", href: "/admin/pharmacy", icon: Truck },
+      { name: "Medicine Stock", href: "/admin/medicine-stock", icon: BriefcaseMedical },
       { name: "Emergency Monitoring", href: "/admin/emergency-monitoring", icon: AlertTriangle, variant: "destructive" },
       { name: "Transactions", href: "/admin/transactions", icon: FileSpreadsheet },
       { name: "Support Tickets", href: "/admin/support-tickets", icon: LifeBuoy },
       { name: "System Settings", href: "/admin/settings", icon: Settings },
       { name: "Audit Logs", href: "/admin/audit-logs", icon: FileClock },
+      { name: "Ambulances", href: "/admin/ambulances", icon: Truck },
     ],
     super_admin: [
       { name: "Platform Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
       { name: "Manage Admins", href: "/super-admin/admins", icon: ShieldCheck },
       { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
+      { name: "Ambulance Fleet", href: "/super-admin/ambulances", icon: Truck },
       { name: "Platform Analytics", href: "/super-admin/analytics", icon: Activity },
       { name: "Global Settings", href: "/super-admin/settings", icon: Settings },
     ]

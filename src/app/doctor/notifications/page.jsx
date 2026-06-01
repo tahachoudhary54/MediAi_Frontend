@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Bell, AlertTriangle, Calendar, CheckCircle2, MessageSquare } from "lucide-react"
+import { Bell, AlertTriangle, Calendar, CheckCircle2, MessageSquare, Trash2, CreditCard } from "lucide-react"
 import api from "@/lib/api"
 
 export default function DoctorNotifications() {
@@ -12,36 +12,38 @@ export default function DoctorNotifications() {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const res = await api.get('/notifications')
+        const res = await api.get('/notifications');
         if (res.data.success) {
-          setNotifications(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
+          setNotifications(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
         }
-      } catch (err) {
-        console.error("Failed to fetch notifications:", err)
+      } catch (error) {
+        console.error('Failed to fetch notifications:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
-    fetchNotifications()
-  }, [])
+    };
+    fetchNotifications();
+  }, []);
 
   const getIcon = (type) => {
     switch (type) {
-      case 'emergency': return <AlertTriangle className="h-5 w-5 text-red-600" />
-      case 'appointment': return <Calendar className="h-5 w-5 text-teal-600" />
-      case 'verification': return <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-      case 'message': return <MessageSquare className="h-5 w-5 text-indigo-600" />
-      default: return <Bell className="h-5 w-5 text-slate-600" />
+      case 'payment': return <CreditCard className="h-5 w-5 text-green-600" />;
+      case 'emergency': return <AlertTriangle className="h-5 w-5 text-red-600" />;
+      case 'appointment': return <Calendar className="h-5 w-5 text-teal-600" />;
+      case 'verification': return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
+      case 'message': return <MessageSquare className="h-5 w-5 text-indigo-600" />;
+      default: return <Bell className="h-5 w-5 text-slate-600" />;
     }
-  }
+  };
 
   const getBgColor = (type) => {
     switch (type) {
-      case 'emergency': return 'bg-red-50 border-red-100'
-      case 'appointment': return 'bg-teal-50 border-teal-100'
-      default: return 'bg-white border-slate-200'
+      case 'emergency': return 'bg-red-50 border-red-100';
+      case 'appointment': return 'bg-teal-50 border-teal-100';
+      case 'payment': return 'bg-green-50 border-green-100';
+      default: return 'bg-white border-slate-200';
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -65,8 +67,8 @@ export default function DoctorNotifications() {
             <div key={note._id} className={`flex items-start gap-4 p-4 border rounded-xl transition-shadow hover:shadow-sm ${getBgColor(note.type)}`}>
               <div className="p-2 bg-white rounded-full shadow-sm border border-slate-100">{getIcon(note.type)}</div>
               <div className="flex-1">
-                <h4 className={`font-semibold ${note.type === 'emergency' ? 'text-red-900' : 'text-slate-900'}`}>{note.title}</h4>
-                <p className={`text-sm mt-1 ${note.type === 'emergency' ? 'text-red-700' : 'text-slate-600'}`}>{note.message}</p>
+                <h4 className={`font-semibold ${note.type === 'emergency' ? 'text-red-900' : note.type === 'payment' ? 'text-green-900' : 'text-slate-900'}`}>{note.title}{note.type === 'payment' && note.amount ? ` – ₹${note.amount}` : ''}</h4>
+                <p className={`text-sm mt-1 ${note.type === 'emergency' ? 'text-red-700' : note.type === 'payment' ? 'text-green-700' : 'text-slate-600'}`}>{note.message}</p>
                 <p className="text-[10px] text-slate-500 mt-2 font-medium uppercase tracking-wider">{new Date(note.createdAt).toLocaleString()}</p>
               </div>
               {!note.read && <div className="h-2 w-2 rounded-full bg-teal-500 mt-2"></div>}

@@ -33,6 +33,11 @@ export function GuestSOSModal() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
+    if (!formData.guestName) {
+      toast.error("Full name is required")
+      return
+    }
+
     if (!formData.guestPhone) {
       toast.error("Phone number is required")
       return
@@ -184,11 +189,12 @@ export function GuestSOSModal() {
                     </div>
                     
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-700">Full Name (Optional)</label>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">Full Name (Required)</label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input 
                           type="text"
+                          required
                           value={formData.guestName}
                           onChange={e => setFormData({...formData, guestName: e.target.value})}
                           placeholder="Your Name"

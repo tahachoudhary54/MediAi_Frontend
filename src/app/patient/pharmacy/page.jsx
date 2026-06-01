@@ -16,47 +16,71 @@ export default function PatientPharmacy() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Order Form State
-  const [cart, setCart] = useState([{ medicineName: "", quantity: 1 }])
+  const [cart, setCart] = useState([{ medicineId: "", medicineName: "", quantity: 1, maxQty: 1, price: 0 }])
   const [deliveryAddress, setDeliveryAddress] = useState("")
+  const [availableMedicines, setAvailableMedicines] = useState([])
 
-  const fetchOrders = async () => {
+  const fetchOrdersAndStock = async () => {
     try {
       setIsLoading(true)
-      const res = await api.get('/medicine-orders/patient')
-      if (res.data.success) {
-        setOrders(res.data.data)
+      const [ordersRes, stockRes] = await Promise.all([
+        api.get('/medicine-orders/patient'),
+        api.get('/medicine-stock')
+      ])
+      if (ordersRes.data.success) {
+        setOrders(ordersRes.data.data)
+      }
+      if (stockRes.data.success) {
+        setAvailableMedicines(stockRes.data.data.filter(m => m.quantity > 0 && m.isActive !== false))
       }
     } catch (error) {
       console.error(error)
-      toast.error("Failed to load your orders")
+      toast.error("Failed to load data")
     } finally {
       setIsLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchOrders()
+    fetchOrdersAndStock()
 
     const handleOrderUpdate = () => {
-      console.log("[PatientPharmacy] Received orderStatusUpdated custom event. Hot-reloading...");
-      fetchOrders()
+      fetchOrdersAndStock()
+    }
+
+    const handleStockUpdate = () => {
+      fetchOrdersAndStock()
     }
 
     window.addEventListener("orderStatusUpdated", handleOrderUpdate)
+    window.addEventListener("medicineStockUpdated", handleStockUpdate)
 
     return () => {
       window.removeEventListener("orderStatusUpdated", handleOrderUpdate)
+      window.removeEventListener("medicineStockUpdated", handleStockUpdate)
     }
   }, [])
 
   const handleAddToCart = () => {
-    setCart([...cart, { medicineName: "", quantity: 1 }])
+    setCart([...cart, { medicineId: "", medicineName: "", quantity: 1, maxQty: 1, price: 0 }])
   }
 
   const handleRemoveFromCart = (index) => {
     const newCart = [...cart]
     newCart.splice(index, 1)
+    setCart(newCart)
+  }
+
+  const handleMedicineSelect = (index, medicineId) => {
+    const med = availableMedicines.find(m => m._id === medicineId)
+    const newCart = [...cart]
+    if (med) {
+      const discount = med.discount || 0;
+      const discountedPrice = Math.round(med.price * (1 - discount / 100));
+      newCart[index] = { ...newCart[index], medicineId: med._id, medicineName: med.name, maxQty: med.quantity, price: discountedPrice, originalPrice: med.price, discount: med.discount, quantity: 1 }
+    } else {
+      newCart[index] = { medicineId: "", medicineName: "", quantity: 1, maxQty: 1, price: 0 }
+    }
     setCart(newCart)
   }
 
@@ -66,11 +90,13 @@ export default function PatientPharmacy() {
     setCart(newCart)
   }
 
+  const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+
   const handleSubmitOrder = async (e) => {
     e.preventDefault()
     
     // Validate
-    const validItems = cart.filter(item => item.medicineName.trim() !== "")
+    const validItems = cart.filter(item => item.medicineId)
     if (validItems.length === 0) {
       return toast.error("Please add at least one medicine")
     }
@@ -101,8 +127,8 @@ export default function PatientPharmacy() {
         }
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to place order")
+      console.error("Order error:", error.response?.data || error.message || error)
+      toast.error(error.response?.data?.message || "Failed to place order")
     } finally {
       setIsSubmitting(false)
     }
@@ -114,7 +140,7 @@ export default function PatientPharmacy() {
       const res = await api.delete(`/medicine-orders/${id}`)
       if (res.data.success) {
         toast.success("Order deleted successfully")
-        fetchOrders()
+        fetchOrdersAndStock()
       }
     } catch (error) {
       console.error(error)
@@ -168,21 +194,38 @@ export default function PatientPharmacy() {
                   {cart.map((item, index) => (
                     <div key={index} className="flex items-start gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                       <div className="flex-1 space-y-3">
-                        <Input 
-                          placeholder="E.g. Paracetamol 500mg" 
-                          value={item.medicineName}
-                          onChange={(e) => handleCartChange(index, 'medicineName', e.target.value)}
-                          className="bg-white"
-                        />
+                        <select
+                          className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+                          value={item.medicineId}
+                          onChange={(e) => handleMedicineSelect(index, e.target.value)}
+                        >
+                          <option value="">Select a medicine...</option>
+                          {availableMedicines.map(med => {
+                            const discount = med.discount || 0;
+                            const discountedPrice = Math.round(med.price * (1 - discount / 100));
+                            return (
+                              <option key={med._id} value={med._id}>
+                                {med.name} {med.mg ? `(${med.mg}mg)` : ""} - ₹{discountedPrice} {discount > 0 ? `(${discount}% OFF)` : ""} (In stock: {med.quantity})
+                              </option>
+                            )
+                          })}
+                        </select>
                         <div className="flex items-center gap-2">
                           <Label className="text-xs text-slate-500">Qty:</Label>
                           <Input 
                             type="number" 
                             min="1" 
+                            max={item.maxQty || 1}
                             className="w-20 h-8 bg-white" 
                             value={item.quantity}
                             onChange={(e) => handleCartChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                            disabled={!item.medicineId}
                           />
+                          {item.medicineId && (
+                            <span className="text-sm font-semibold text-slate-700 ml-auto">
+                              ₹{item.price * item.quantity}
+                            </span>
+                          )}
                         </div>
                       </div>
                       {cart.length > 1 && (
@@ -207,6 +250,11 @@ export default function PatientPharmacy() {
                   >
                     <Plus className="w-4 h-4 mr-1" /> Add Another Medicine
                   </Button>
+                </div>
+
+                <div className="flex items-center justify-between py-4 border-t border-slate-100">
+                  <span className="text-slate-700 font-medium">Total Amount:</span>
+                  <span className="text-xl font-bold text-teal-600">₹{cartTotal}</span>
                 </div>
 
                 <div className="space-y-2">
@@ -289,7 +337,10 @@ export default function PatientPharmacy() {
                           {order.items.map((item, idx) => (
                             <li key={idx} className="flex justify-between items-center text-sm">
                               <span className="text-slate-700 font-medium">{item.medicineName}</span>
-                              <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-xs font-semibold">Qty: {item.quantity}</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded text-xs font-semibold">Qty: {item.quantity}</span>
+                                {item.price > 0 && <span className="text-slate-900 font-semibold text-sm w-12 text-right">₹{item.price * item.quantity}</span>}
+                              </div>
                             </li>
                           ))}
                         </ul>

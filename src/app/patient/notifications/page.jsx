@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Bell, XCircle, CalendarCheck, CheckCircle, AlertCircle } from "lucide-react"
+import { Bell, XCircle, CalendarCheck, CheckCircle, AlertCircle, Trash2 } from "lucide-react"
 import Link from "next/link"
 import api from "@/lib/api"
 
@@ -47,6 +47,15 @@ export default function NotificationsPage() {
       fetchNotifications()
     } catch (err) {
       console.error("Failed to mark as read:", err)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/notifications/${id}`)
+      fetchNotifications()
+    } catch (err) {
+      console.error("Failed to delete notification:", err)
     }
   }
 
@@ -172,6 +181,14 @@ export default function NotificationsPage() {
                       Mark Read
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(notif._id)}
+                    className="flex-shrink-0"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Filter, FileSpreadsheet, DollarSign, Clock, CheckCircle2, XCircle, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import { Search, Filter, FileSpreadsheet, DollarSign, Clock, CheckCircle2, XCircle, ArrowUpRight, ArrowDownRight, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -15,6 +15,17 @@ export default function AdminTransactions() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
+
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this transaction?")) return
+    try {
+      await api.delete(`/admin/transactions/${id}`)
+      setTransactions(prev => prev.filter(t => t._id !== id))
+      toast.success("Transaction deleted")
+    } catch (err) {
+      toast.error("Failed to delete transaction")
+    }
+  }
 
   const fetchTransactions = async () => {
     try {
@@ -164,18 +175,19 @@ export default function AdminTransactions() {
                   <TableHead>Method</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Date</TableHead>
+                  <TableHead className="text-center">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                       Loading transactions...
                     </TableCell>
                   </TableRow>
                 ) : filteredTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-20">
+                    <TableCell colSpan={8} className="text-center py-20">
                       <div className="flex flex-col items-center">
                         <DollarSign className="h-12 w-12 text-slate-200 mb-3" />
                         <p className="text-lg font-semibold text-slate-900">No transactions found</p>
@@ -210,6 +222,17 @@ export default function AdminTransactions() {
                       <TableCell className="text-right text-sm text-slate-500">
                         {new Date(t.createdAt).toLocaleDateString()}<br />
                         <span className="text-[10px]">{new Date(t.createdAt).toLocaleTimeString()}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => handleDelete(t._id)}
+                          title="Delete transaction"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

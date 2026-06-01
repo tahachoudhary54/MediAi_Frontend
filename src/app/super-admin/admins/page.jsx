@@ -1,11 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
 import { Shield, Plus, MoreVertical, Trash2, Edit, AlertCircle, CheckCircle } from "lucide-react"
 
 export default function ManageAdmins() {
+  const router = useRouter()
   const { token } = useAuth()
   const [admins, setAdmins] = useState([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +47,10 @@ export default function ManageAdmins() {
   useEffect(() => {
     if (token) fetchAdmins()
   }, [token])
+
+  const handleRowClick = (adminId) => {
+    router.push('/super-admin/admins/' + adminId)
+  }
 
   const handleAddAdmin = async (e) => {
     e.preventDefault()
@@ -165,7 +171,7 @@ export default function ManageAdmins() {
                 </tr>
               ) : (
                 admins.map((admin) => (
-                  <tr key={admin._id} className="hover:bg-slate-50">
+                  <tr key={admin._id} className="hover:bg-slate-50 cursor-pointer" onClick={() => handleRowClick(admin._id)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="h-9 w-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
@@ -188,7 +194,7 @@ export default function ManageAdmins() {
                         {admin.isActive ? 'Active' : 'Suspended'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <button 
                         onClick={() => handleSuspend(admin._id, admin.isActive)}
                         className={`text-sm mr-4 ${admin.isActive ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'}`}

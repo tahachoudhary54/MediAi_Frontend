@@ -74,6 +74,7 @@ export default function PatientLayout({ children }) {
       patientSocket.off("userProfileUpdated");
       patientSocket.off("orderStatusUpdated");
       patientSocket.off("orderDeletedPatient");
+      patientSocket.off("medicineStockUpdated");
       patientSocket.off("disconnect");
 
       patientSocket.on("connect", () => {
@@ -156,6 +157,11 @@ export default function PatientLayout({ children }) {
           position: "top-right"
         });
         window.dispatchEvent(new CustomEvent("orderStatusUpdated")); // Hot-reloads page orders
+      });
+
+      patientSocket.on("medicineStockUpdated", () => {
+        console.log(`[Socket] Patient received medicineStockUpdated`);
+        window.dispatchEvent(new CustomEvent("medicineStockUpdated"));
       });
 
       patientSocket.on("doctorFollowUpMessage", (data) => {

@@ -153,6 +153,16 @@ export default function DoctorChatSession() {
       }
     });
 
+    socket.on('chat_paid', (data) => {
+      if (data._id === chatId) {
+        toast.success("Patient has paid. Chat is now active!");
+        api.get(`/chats/${chatId}`).then(res => {
+          setChat(res.data.data);
+          fetchAllChats();
+        }).catch(() => { });
+      }
+    });
+
     return () => {
       console.log(`[Socket] Doctor disconnecting from chat room chat_${chatId}`);
       socket.disconnect();
@@ -360,6 +370,25 @@ export default function DoctorChatSession() {
     )
   }
 
+  if (chat?.status === 'accepted') {
+    return (
+      <div className="h-[calc(100vh-8rem)] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center p-8 space-y-6 shadow-xl border-teal-100">
+          <div className="relative mx-auto w-24 h-24">
+            <div className="absolute inset-0 rounded-full border-4 border-teal-100 border-t-teal-600 animate-spin" />
+            <div className="absolute inset-2 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+              <span className="text-3xl font-bold text-teal-700">{chat.patient?.fullName?.charAt(0) || 'P'}</span>
+            </div>
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">Waiting for Payment</h2>
+            <p className="text-slate-500 mt-2">You accepted the request. Waiting for {chat.patient?.fullName} to complete the payment...</p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   if (chat?.status === 'declined') {
     return (
       <div className="h-[calc(100vh-8rem)] flex items-center justify-center p-4">
@@ -515,12 +544,16 @@ export default function DoctorChatSession() {
           disabled={chat.status === 'ended'}
           headerRight={
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=false`)}>
-                <Phone className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=true`)}>
-                <Video className="h-5 w-5" />
-              </Button>
+              {(chat?.features || []).includes('voice') && (
+                <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=false`)}>
+                  <Phone className="h-5 w-5" />
+                </Button>
+              )}
+              {(chat?.features || []).includes('video') && (
+                <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/doctor/video-call?chatId=${chat._id}&isVideo=true`)}>
+                  <Video className="h-5 w-5" />
+                </Button>
+              )}
               {chat.status !== 'ended' && (
                 <Button variant="danger" size="sm" onClick={handleEndConsultation}>
                   End

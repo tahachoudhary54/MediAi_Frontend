@@ -188,7 +188,7 @@ export default function DoctorLayout({ children }) {
 
   const handleAccept = async () => {
     try {
-      await api.put(`/chats/${incomingRequest._id}/respond`, { status: 'active' })
+      await api.put(`/chats/${incomingRequest._id}/respond`, { status: 'accepted' })
 
       // Automatically update status to busy
       try {
@@ -266,61 +266,61 @@ export default function DoctorLayout({ children }) {
       {/* Incoming Consultation Modal */}
       {incomingRequest && !pathname.includes(incomingRequest._id) && (
         <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-700/50">
-            <div className="bg-gradient-to-br from-teal-900 to-teal-950 p-8 text-center relative border-b border-teal-800/50">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={handleBusy}
-                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition-all"
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold transition-all shadow-sm border border-slate-200"
                 title="Decline"
               >✕</button>
               
               <div className="relative mx-auto w-20 h-20 mb-6">
-                <div className="absolute inset-0 rounded-full border-2 border-teal-500/30 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-[#0f172a]">
+                <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
+                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <MessageSquare className="h-8 w-8 text-white" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-teal-950 flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
                    <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
                 </div>
               </div>
               
-              <h3 className="text-2xl font-extrabold text-white tracking-tight">Consultation Request</h3>
-              <p className="text-teal-200/80 text-sm mt-2 font-medium">{incomingRequest.patient?.fullName} wants to connect with you</p>
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Consultation Request</h3>
+              <p className="text-teal-700 text-sm mt-2 font-medium">{incomingRequest.patient?.fullName} wants to connect with you</p>
             </div>
 
-            <div className="p-8 space-y-6">
-              <div className="flex items-center gap-4 p-5 bg-slate-800/50 rounded-2xl border border-slate-700/50">
-                <div className="h-14 w-14 rounded-full bg-slate-700 flex items-center justify-center text-teal-400 font-bold text-xl border border-slate-600 shadow-inner">
+            <div className="p-8 space-y-6 bg-white">
+              <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="h-14 w-14 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xl border border-teal-200 shadow-sm">
                   {incomingRequest.patient?.fullName?.charAt(0)}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Patient</p>
-                  <p className="text-xl font-bold text-slate-100 truncate">{incomingRequest.patient?.fullName}</p>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Patient</p>
+                  <p className="text-xl font-bold text-slate-900 truncate">{incomingRequest.patient?.fullName}</p>
                 </div>
               </div>
 
               {isRescheduling ? (
                 <div className="space-y-4 animate-in slide-in-from-bottom-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-300">Suggest New Time</label>
+                    <label className="text-sm font-bold text-slate-700">Suggest New Time</label>
                     <input
                       type="datetime-local"
-                      className="w-full h-12 px-4 rounded-xl border border-slate-600 focus:ring-2 focus:ring-teal-500 text-slate-100 bg-slate-800"
+                      className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 text-slate-900 bg-white"
                       value={rescheduleTime}
                       onChange={(e) => setRescheduleTime(e.target.value)}
                     />
                   </div>
                   <div className="flex gap-3">
-                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-600 bg-transparent text-slate-300 hover:bg-slate-800" onClick={() => setIsRescheduling(false)}>Back</Button>
-                    <Button className="flex-1 h-12 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold" onClick={handleReschedule}>Confirm</Button>
+                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900" onClick={() => setIsRescheduling(false)}>Back</Button>
+                    <Button className="flex-1 h-12 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold" onClick={handleReschedule}>Confirm</Button>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  <Button variant="outline" className="h-14 rounded-xl border-slate-700 bg-slate-800/80 text-slate-300 font-bold hover:bg-slate-700 hover:text-white transition-all" onClick={handleBusy}>
+                  <Button variant="outline" className="h-14 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm" onClick={handleBusy}>
                     Decline
                   </Button>
-                  <Button className="h-14 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)] transition-all flex items-center justify-center gap-2" onClick={handleAccept}>
+                  <Button className="h-14 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 transition-all flex items-center justify-center gap-2" onClick={handleAccept}>
                     Accept Consultation
                   </Button>
                 </div>

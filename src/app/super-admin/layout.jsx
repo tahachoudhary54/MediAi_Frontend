@@ -114,8 +114,8 @@ export default function SuperAdminLayout({ children }) {
       <Sidebar role="super_admin" />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Topbar role="super_admin" />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
-          <div className="mx-auto max-w-6xl">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+          <div className="mx-auto max-w-[1600px]">
             {children}
           </div>
         </main>

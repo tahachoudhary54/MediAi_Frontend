@@ -6,7 +6,7 @@ import { ChatWindow } from "@/components/shared/ChatWindow"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Video, Phone, Activity, FileText, CheckCircle2, Clock, Calendar, History, Stethoscope, MessageSquare, Trash2 } from "lucide-react"
+import { Video, Phone, Activity, FileText, CheckCircle2, Clock, Calendar, History, Stethoscope, MessageSquare, Trash2, Camera } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
@@ -58,11 +58,18 @@ export default function DoctorChat() {
         const docRes = await api.get(`/doctors/${doctorId}`)
         setDoctor(docRes.data.data)
 
-        // Request or get existing chat (ONLY ONCE!)
-        const isResuming = searchParams.get('resume') === 'true'
-        console.log(`[Chat Request] patient clicked Start Chat with doctorId: ${doctorId}, resume: ${isResuming}`)
-        const chatRes = await api.post('/chats/request', { doctorId, resume: isResuming })
-        const chatData = chatRes.data.data
+        let chatData;
+        if (chatIdParam) {
+          console.log(`[Chat Initialization] Loading existing chat with ID: ${chatIdParam}`);
+          const chatRes = await api.get(`/chats/${chatIdParam}`);
+          chatData = chatRes.data.data;
+        } else {
+          // Request or get existing chat (ONLY ONCE!)
+          const isResuming = searchParams.get('resume') === 'true'
+          console.log(`[Chat Request] patient clicked Start Chat with doctorId: ${doctorId}, resume: ${isResuming}`)
+          const chatRes = await api.post('/chats/request', { doctorId, resume: isResuming })
+          chatData = chatRes.data.data
+        }
 
         setChat(chatData)
         const formatted = (chatData.messages || []).map(m => ({
@@ -805,12 +812,16 @@ export default function DoctorChat() {
           disabled={consultationEnded || chat?.status !== 'active'}
           headerRight={
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=false`)}>
-                <Phone className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=true`)}>
-                <Video className="h-5 w-5" />
-              </Button>
+              {(chat?.features || []).includes('voice') && (
+                <Button variant="ghost" size="icon" className="text-slate-600" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=false`)}>
+                  <Phone className="h-5 w-5" />
+                </Button>
+              )}
+              {(chat?.features || []).includes('video') && (
+                <Button variant="ghost" size="icon" className="text-slate-600 bg-slate-100" onClick={() => router.push(`/patient/video-call?chatId=${chat._id}&isVideo=true`)}>
+                  <Video className="h-5 w-5" />
+                </Button>
+              )}
               {!consultationEnded && (
                 <Button variant="danger" size="sm" onClick={handleEndConsultation}>
                   End
