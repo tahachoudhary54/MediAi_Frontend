@@ -119,15 +119,17 @@ export function GuestSOSModal() {
     <>
       {/* Floating Action Button */}
       <motion.button
+        drag
+        dragMomentum={false}
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={handleOpen}
-        className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl shadow-red-600/30 ring-4 ring-white transition-all focus:outline-none focus:ring-red-400"
+        className="fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-xl shadow-red-600/30 ring-4 ring-white focus:outline-none focus:ring-red-400 cursor-move touch-none"
       >
-        <AlertTriangle className="h-7 w-7" />
-        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold ring-2 ring-white">
+        <AlertTriangle className="h-7 w-7 pointer-events-none" />
+        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold ring-2 ring-white pointer-events-none">
           SOS
         </span>
       </motion.button>
