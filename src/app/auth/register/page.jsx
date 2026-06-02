@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff } from "lucide-react"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
+import { toast } from "react-hot-toast"
 
 function RegisterContent() {
   const router = useRouter()
@@ -185,6 +186,7 @@ function RegisterContent() {
           } else {
             setIsSubmitted(true)
             setVerificationStatus(res.data.verificationStatus || "pending")
+            toast.success("Verification request submitted successfully!")
           }
         }
       } else {
@@ -222,6 +224,7 @@ function RegisterContent() {
       console.error("Registration error:", err)
       const errorMsg = err.response?.data?.message || err.message || "Registration failed. Please try again."
       setError(errorMsg)
+      toast.error(errorMsg)
     }
   }
 

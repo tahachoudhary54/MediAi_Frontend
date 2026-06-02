@@ -23,6 +23,8 @@ function LoginContent() {
   const [showAdminCode, setShowAdminCode] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [needsOtp, setNeedsOtp] = useState(false)
+  const [otp, setOtp] = useState("")
   const { login } = useAuth()
 
   const handleDemoLogin = async (selectedRole) => {
@@ -70,7 +72,43 @@ function LoginContent() {
       }
     } catch (err) {
       console.error("[LoginPage] Login error:", err);
-      setError(err.response?.data?.message || "Failed to login.")
+      
+      // Handle the case where the doctor is approved but needs to enter OTP
+      if (err.response?.status === 401 && err.response?.data?.requireOtp) {
+        setNeedsOtp(true)
+        setError(err.response.data.message)
+      } else {
+        setError(err.response?.data?.message || "Failed to login.")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError("")
+
+    try {
+      const payload = {
+        email,
+        otp,
+        role: "doctor"
+      }
+
+      const res = await api.post('/auth/verify-otp', payload)
+
+      if (res.data.success) {
+        // After verifying OTP, auto-login with credentials to get token
+        const loginPayload = { email, password, role: "doctor" }
+        const loginRes = await api.post('/auth/login', loginPayload)
+        if (loginRes.data.success) {
+          login(loginRes.data, loginRes.data.token, loginRes.data.role)
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "OTP Verification failed. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -128,7 +166,42 @@ function LoginContent() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            {needsOtp ? (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
+                <div className="text-center space-y-2 mb-4">
+                  <div className="mx-auto bg-teal-50 w-12 h-12 rounded-full flex items-center justify-center mb-2">
+                    <Activity className="h-6 w-6 text-teal-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">Verify Account</h3>
+                  <p className="text-sm text-slate-500">Enter the 6-digit code sent to <br/><span className="font-medium text-slate-700">{email}</span></p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="otp" className="text-center block">Verification Code</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    maxLength="6"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    required
+                    className="text-center text-2xl tracking-widest h-14"
+                    placeholder="000000"
+                  />
+                </div>
+                <Button type="submit" className="w-full h-12 text-lg" disabled={loading}>
+                  {loading ? "Verifying..." : "Verify & Continue"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => { setNeedsOtp(false); setOtp(""); setError(""); }} 
+                  className="w-full text-sm text-slate-500 hover:text-slate-700"
+                >
+                  Back to Login
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -198,6 +271,7 @@ function LoginContent() {
                 {loading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
+            )}
 
             <div className="mt-6 relative">
               <div className="absolute inset-0 flex items-center">
