@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AlertTriangle, MapPin, X, Phone, User, Activity, Loader2 } from "lucide-react"
 import { toast } from "react-hot-toast"
 import { motion, AnimatePresence } from "framer-motion"
@@ -9,6 +9,15 @@ export function GuestSOSModal() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [status, setStatus] = useState("idle") // idle, requesting_location, submitting, success
+
+  useEffect(() => {
+    const handleTrigger = () => {
+      setIsOpen(true)
+      setStatus("idle")
+    }
+    window.addEventListener('trigger-open-sos', handleTrigger)
+    return () => window.removeEventListener('trigger-open-sos', handleTrigger)
+  }, [])
   
   const [formData, setFormData] = useState({
     guestName: "",
