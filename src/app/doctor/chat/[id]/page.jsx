@@ -559,8 +559,6 @@ export default function DoctorChatSession() {
                   End
                 </Button>
               )}
-              {/* Media upload button for doctor */}
-              <MediaUploadButton onUpload={handleUpload} />
             </div>
           }
         />

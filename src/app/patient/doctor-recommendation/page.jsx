@@ -142,7 +142,7 @@ export default function DoctorRecommendation() {
     });
 
     socket.on("consultationResponded", (chat) => {
-      if (chat.status === 'accepted') {
+      if (chat.status === 'active' || chat.status === 'accepted') {
         setConsultationModalOpen(false);
         setIsWaitingForDoctor(false);
         setPaymentModalOpen(true);
