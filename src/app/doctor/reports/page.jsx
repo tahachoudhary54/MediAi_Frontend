@@ -5,9 +5,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
-import { FileText, Eye, Download, Search, CheckCircle2 } from "lucide-react"
+import { FileText, Eye, Download, Search, CheckCircle2, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
+import { jsPDF } from "jspdf"
 
 export default function DoctorReports() {
   const [reports, setReports] = useState([])
@@ -45,6 +46,97 @@ export default function DoctorReports() {
     setIsReportModalOpen(true)
   }
 
+  const handleDownloadPDF = (report) => {
+    try {
+      const doc = new jsPDF();
+
+      // Basic styling
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.setTextColor(15, 118, 110);
+      doc.text("MediAI Healthcare - Clinical Report", 14, 20);
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(100, 116, 139);
+      doc.text("Official Electronic Medical Record", 14, 28);
+
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(15, 118, 110);
+      doc.line(14, 32, 196, 32);
+
+      // Meta info
+      doc.setFontSize(11);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Report Title: ${report.title || 'Consultation Report'}`, 14, 42);
+      doc.text(`Date: ${new Date(report.createdAt).toLocaleDateString()}`, 14, 48);
+      doc.text(`Patient: ${report.patient?.fullName || 'N/A'}`, 14, 54);
+      doc.text(`Consulting Physician: Dr. ${report.doctor?.fullName || 'N/A'}`, 14, 60);
+
+      let yPos = 72;
+
+      const addSection = (title, content) => {
+        if (!content) return;
+
+        // Check page break for section title
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(15, 118, 110);
+        doc.text(title, 14, yPos);
+        yPos += 8;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.setTextColor(51, 65, 85);
+
+        const lines = doc.splitTextToSize(content, 180);
+
+        // Render lines with page break checking
+        for (let i = 0; i < lines.length; i++) {
+          if (yPos > 280) {
+            doc.addPage();
+            yPos = 20;
+          }
+          doc.text(lines[i], 14, yPos);
+          yPos += 6;
+        }
+
+        yPos += 8; // Add space after section
+      }
+
+      if (report.content || report.assessment || report.plan) {
+        if (report.content) addSection("Observations & Findings", report.content);
+        if (report.assessment) addSection("Clinical Assessment", report.assessment);
+        if (report.plan) addSection("Plan & Treatment", report.plan);
+      } else {
+        addSection("Clinical Notes & Summary", report.summary || 'No summary available.');
+      }
+
+      if (report.prescription) {
+        addSection("Prescription & Medical Instructions", report.prescription);
+      }
+
+      // Footer on the last page
+      if (yPos > 280) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text("This is a secure, system-generated medical report verified by MediAI Healthcare.", 14, 290);
+
+      doc.save(`MediAI_Report_${report.patient?.fullName || report._id}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
+    }
+  }
+
   const handleSaveEdits = async () => {
     try {
       await api.put(`/reports/${selectedReport._id}`, editForm)
@@ -67,6 +159,17 @@ export default function DoctorReports() {
       setIsReportModalOpen(false)
     } catch (err) {
       toast.error("Failed to approve report")
+    }
+  }
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm("Are you sure you want to delete this report? This cannot be undone.")) return;
+    try {
+      await api.delete(`/reports/${reportId}`);
+      toast.success("Report deleted successfully");
+      fetchReports();
+    } catch (err) {
+      toast.error("Failed to delete report");
     }
   }
 
@@ -135,8 +238,11 @@ export default function DoctorReports() {
                   <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200" onClick={() => handleViewReport(report)}>
                     <Eye className="h-4 w-4" /> View / Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200" disabled={report.status === 'Draft by AI'}>
+                  <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200" disabled={report.status === 'Draft by AI'} onClick={() => handleDownloadPDF(report)}>
                     <Download className="h-4 w-4" /> PDF
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full gap-2 border-slate-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200" onClick={() => handleDeleteReport(report._id)}>
+                    <Trash2 className="h-4 w-4" /> Delete
                   </Button>
                 </div>
               </CardContent>

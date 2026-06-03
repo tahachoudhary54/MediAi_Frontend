@@ -19,7 +19,7 @@ export default function AdminLayout({ children }) {
     if (authLoaded) {
       if (!token) {
         router.push('/auth/login?role=admin')
-      } else if (role !== 'admin') {
+      } else if (role !== 'admin' && role !== 'super_admin') {
         // Redirect to the correct dashboard for the user's role
         router.push(`/${role}/dashboard`)
       } else {
@@ -172,9 +172,9 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <Sidebar role="admin" />
+      <Sidebar role={role === 'super_admin' ? 'super_admin' : 'admin'} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar role="admin" />
+        <Topbar role={role === 'super_admin' ? 'super_admin' : 'admin'} />
         <main className="flex-1 overflow-y-auto p-4 sm:p-8">
           <div className="mx-auto max-w-6xl">
             {children}

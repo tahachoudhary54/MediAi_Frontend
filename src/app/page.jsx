@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { 
-  ArrowRight, Activity, Shield, Clock, Check, Users, Sparkles, 
-  Heart, UserPlus, ScanText, Bell, Lock, FileText, Star, Quote, ChevronRight, 
-  MessageSquare, Brain, UserCheck, Download, Play, Video, Phone, MapPin, 
-  HeartPulse, Plus, Menu, X, HelpCircle, FileCheck, CheckCircle2, ChevronDown, 
+import {
+  ArrowRight, Activity, Shield, Clock, Check, Users, Sparkles,
+  Heart, UserPlus, ScanText, Bell, Lock, FileText, Star, Quote, ChevronRight,
+  MessageSquare, Brain, UserCheck, Download, Play, Video, Phone, MapPin,
+  HeartPulse, Plus, Menu, X, HelpCircle, FileCheck, CheckCircle2, ChevronDown,
   ArrowUpRight, AlertTriangle, Stethoscope, RefreshCw, Calendar, TrendingUp
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
@@ -84,7 +84,7 @@ const faqItems = [
 export default function RedesignedLandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activeFAQ, setActiveFAQ] = useState(null)
-  
+
   // Section 5 SOS Showcase interactive sequence state
   const [sosStep, setSosStep] = useState(0)
 
@@ -127,7 +127,7 @@ export default function RedesignedLandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white selection:bg-teal-500 selection:text-white font-sans antialiased scroll-smooth">
-      
+
       {/* ==================================
           HEADER NAVIGATION
           ================================== */}
@@ -140,7 +140,7 @@ export default function RedesignedLandingPage() {
             </div>
             <span className="text-2xl font-black tracking-tight text-slate-900">MediAI</span>
           </Link>
-          
+
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-8">
             {[
@@ -151,9 +151,9 @@ export default function RedesignedLandingPage() {
               { label: "Why MediAI", id: "why-mediai" },
               { label: "FAQ", id: "faq" }
             ].map((item) => (
-              <a 
+              <a
                 key={item.id}
-                href={`#${item.id}`} 
+                href={`#${item.id}`}
                 onClick={(e) => handleScroll(e, item.id)}
                 className="text-sm font-semibold text-slate-500 hover:text-teal-600 transition-colors duration-200 relative group"
               >
@@ -177,7 +177,7 @@ export default function RedesignedLandingPage() {
           </div>
 
           {/* Mobile Hamburguer */}
-          <button 
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden p-2 text-slate-700 hover:text-teal-600 focus:outline-none"
             aria-label="Toggle menu"
@@ -189,7 +189,7 @@ export default function RedesignedLandingPage() {
         {/* Mobile Navigation Drawer */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -204,9 +204,9 @@ export default function RedesignedLandingPage() {
                   { label: "Why MediAI", id: "why-mediai" },
                   { label: "FAQ", id: "faq" }
                 ].map((item) => (
-                  <a 
+                  <a
                     key={item.id}
-                    href={`#${item.id}`} 
+                    href={`#${item.id}`}
                     onClick={(e) => handleScroll(e, item.id)}
                     className="text-base font-bold text-slate-600 hover:text-teal-600 py-2 border-b border-slate-50 block transition-colors"
                   >
@@ -230,7 +230,7 @@ export default function RedesignedLandingPage() {
       </header>
 
       <main className="flex-1">
-        
+
         {/* ==================================
             SECTION 1 — HERO SECTION
             ================================== */}
@@ -241,7 +241,7 @@ export default function RedesignedLandingPage() {
 
           <div className="grid lg:grid-cols-12 gap-16 items-center w-full">
             {/* Left Side Content */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               animate="visible"
               variants={staggerContainer}
@@ -289,7 +289,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Trust Indicators */}
-              <motion.div 
+              <motion.div
                 variants={fadeInUp}
                 className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-100"
               >
@@ -310,7 +310,7 @@ export default function RedesignedLandingPage() {
             </motion.div>
 
             {/* Right Side: Premium Dashboard Mockup */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -348,7 +348,7 @@ export default function RedesignedLandingPage() {
 
                 {/* Grid elements simulating dashboard widgets */}
                 <div className="grid grid-cols-2 gap-4">
-                  
+
                   {/* AI Chat Assistant Widget (Spans columns) */}
                   <div className="col-span-2 bg-slate-950/80 rounded-2xl border border-slate-800/80 p-4.5 flex flex-col gap-3.5">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
@@ -358,7 +358,7 @@ export default function RedesignedLandingPage() {
                       </div>
                       <span className="text-[10px] text-teal-400 font-bold bg-teal-950 px-2 py-0.5 rounded-full">ACTIVE</span>
                     </div>
-                    
+
                     <div className="flex flex-col gap-2.5 max-h-[140px] overflow-hidden text-xs">
                       <div className="self-end bg-slate-800 text-slate-100 rounded-2xl rounded-tr-none px-3.5 py-2.5 max-w-[85%] font-medium leading-relaxed">
                         I have a dull chest discomfort after jogging.
@@ -410,7 +410,7 @@ export default function RedesignedLandingPage() {
                   </div>
 
                   {/* Emergency SOS Button Widget */}
-                  <div 
+                  <div
                     onClick={triggerSOSModal}
                     className="bg-red-950/20 hover:bg-red-950/30 cursor-pointer rounded-2xl border border-red-900/40 p-4 flex flex-col justify-between items-center text-center min-h-[120px] transition-colors"
                   >
@@ -428,7 +428,7 @@ export default function RedesignedLandingPage() {
                   <div className="bg-slate-950/80 rounded-2xl border border-slate-800/80 p-4 flex flex-col justify-between min-h-[120px] relative overflow-hidden">
                     {/* Glowing scanning bar */}
                     <div className="absolute top-0 left-0 w-full h-[2px] bg-teal-400 shadow-md shadow-teal-400 animate-bounce" />
-                    
+
                     <div>
                       <div className="flex items-center gap-1.5">
                         <ScanText size={12} className="text-teal-400" />
@@ -439,7 +439,7 @@ export default function RedesignedLandingPage() {
                         Qty: 30 Capsules
                       </span>
                     </div>
-                    
+
                     <span className="text-[8px] font-bold bg-teal-950 text-teal-400 px-2 py-0.5 rounded self-start mt-2">PARSED</span>
                   </div>
 
@@ -454,9 +454,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section className="py-24 bg-[#F8FAFC]">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12 text-center">
-            
+
             {/* Title & Info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -475,7 +475,7 @@ export default function RedesignedLandingPage() {
             </motion.div>
 
             {/* 4 Cards Grid */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -515,9 +515,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section id="how-it-works" className="py-24 bg-white relative overflow-hidden">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-            
+
             {/* Header info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -537,10 +537,10 @@ export default function RedesignedLandingPage() {
 
             {/* Horizontal timeline container */}
             <div className="relative">
-              
+
               {/* Connector line for large screens */}
               <div className="hidden lg:block absolute top-[45px] left-[5%] right-[5%] h-[2px] bg-slate-100 -z-0" />
-              
+
               {/* Timeline Steps Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 relative z-10">
                 {[
@@ -629,7 +629,7 @@ export default function RedesignedLandingPage() {
                     )
                   }
                 ].map((step, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={idx}
                     initial="hidden"
                     whileInView="visible"
@@ -649,7 +649,7 @@ export default function RedesignedLandingPage() {
                     <h3 className="text-base font-bold text-slate-900 mb-2 px-2">
                       {step.title}
                     </h3>
-                    
+
                     <p className="text-slate-500 text-xs px-3 font-semibold leading-relaxed max-w-[220px]">
                       {step.description}
                     </p>
@@ -671,9 +671,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section id="features" className="py-24 bg-[#F8FAFC] border-t border-b border-slate-100">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12 space-y-32">
-            
+
             {/* Centered Global Header */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -694,7 +694,7 @@ export default function RedesignedLandingPage() {
             {/* Feature 1: AI Symptom Checker */}
             <div className="grid lg:grid-cols-12 gap-16 items-center">
               {/* Graphic (Left) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -709,12 +709,12 @@ export default function RedesignedLandingPage() {
                     </div>
                     <span className="h-2 w-2 rounded-full bg-teal-400 animate-pulse" />
                   </div>
-                  
+
                   <div className="space-y-3.5 text-xs text-left">
                     <div className="bg-slate-800 text-slate-200 rounded-2xl rounded-tr-none p-3 max-w-[85%] self-end ml-auto">
                       "I've got a persistent dry cough and fatigue for three days."
                     </div>
-                    
+
                     <div className="bg-teal-950/40 border border-teal-900/60 text-slate-200 rounded-2xl rounded-tl-none p-3.5 max-w-[85%]">
                       <div className="flex items-center gap-1.5 text-teal-400 font-black mb-1.5 text-[10px]">
                         <Brain size={12} /> CLINICAL PRE-ASSESSMENT
@@ -737,7 +737,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Copy (Right) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -760,7 +760,7 @@ export default function RedesignedLandingPage() {
             {/* Feature 2: Prescription OCR Scanner */}
             <div className="grid lg:grid-cols-12 gap-16 items-center">
               {/* Copy (Left on large screens, swap layout) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -780,7 +780,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Graphic (Right on large screens, order 2) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -790,7 +790,7 @@ export default function RedesignedLandingPage() {
                 <div className="w-full max-w-[480px] bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl relative overflow-hidden text-left">
                   {/* Scanner line */}
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-teal-400 shadow shadow-teal-400 animate-bounce" />
-                  
+
                   <div className="pb-3 border-b border-slate-850 flex justify-between items-center text-xs mb-4">
                     <span className="font-bold text-slate-400">Rx_Prescription_Scan_104</span>
                     <span className="text-teal-400 font-bold text-[9px] bg-teal-950 px-2 py-0.5 rounded">PARSING...</span>
@@ -825,7 +825,7 @@ export default function RedesignedLandingPage() {
             {/* Feature 3: Doctor Appointment Booking */}
             <div className="grid lg:grid-cols-12 gap-16 items-center">
               {/* Graphic (Left) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -868,7 +868,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Copy (Right) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -888,87 +888,18 @@ export default function RedesignedLandingPage() {
               </motion.div>
             </div>
 
-            {/* Feature 4: Medical Report Analyzer */}
-            <div className="grid lg:grid-cols-12 gap-16 items-center">
-              {/* Copy (Left) */}
-              <motion.div 
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                variants={fadeInUp}
-                className="lg:col-span-6 lg:order-1 flex flex-col space-y-6"
-              >
-                <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">04</div>
-                <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Medical Report Analyzer</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">
-                  Decipher confusing jargon instantly. Upload blood works, lab scans, or diagnostic reports, and our AI interprets key biometric scores, explains the clinical meaning of markers, and tracks health progress trends over time.
-                </p>
-                <ul className="space-y-3 font-semibold text-slate-700 text-sm">
-                  <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-teal-500" /> Simplifies medical reports instantly</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-teal-500" /> Biomarker trends & health-index tracking</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 size={16} className="text-teal-500" /> Exportable PDF summaries for consultation</li>
-                </ul>
-              </motion.div>
 
-              {/* Graphic (Right) */}
-              <motion.div 
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                variants={fadeInUp}
-                className="lg:col-span-6 lg:order-2 flex justify-center"
-              >
-                <div className="w-full max-w-[480px] bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl text-left text-xs">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
-                    <span className="font-bold text-white">Biomarker Health Scan</span>
-                    <span className="text-[10px] text-teal-400 font-bold bg-teal-950 px-2 py-0.5 rounded">COMPILED</span>
-                  </div>
-
-                  <div className="space-y-3.5">
-                    {/* Biomarker 1 */}
-                    <div className="bg-slate-950 border border-slate-850 p-3 rounded-xl">
-                      <div className="flex justify-between items-center text-[10px] mb-1.5">
-                        <span className="text-white font-bold">Fast Glucose Level</span>
-                        <span className="text-teal-400 font-bold">95 mg/dL (Normal)</span>
-                      </div>
-                      {/* Bar indicator */}
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div className="w-[70%] h-full bg-teal-500" />
-                      </div>
-                    </div>
-
-                    {/* Biomarker 2 */}
-                    <div className="bg-slate-950 border border-slate-850 p-3 rounded-xl">
-                      <div className="flex justify-between items-center text-[10px] mb-1.5">
-                        <span className="text-white font-bold">LDL Cholesterol</span>
-                        <span className="text-amber-400 font-bold">110 mg/dL (Borderline)</span>
-                      </div>
-                      {/* Bar indicator */}
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div className="w-[85%] h-full bg-amber-500" />
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-950 border border-slate-850 p-3 rounded-xl leading-relaxed text-slate-400 text-[10px]">
-                      <span className="text-[9px] text-teal-400 font-black block mb-1">AI INSIGHT</span>
-                      Cholesterol is slightly elevated. Consider reducing saturated fat intake and follow up in 30 days.
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Feature 5: Emergency SOS Assistance */}
+            {/* Feature 4: Emergency SOS Assistance */}
             <div className="grid lg:grid-cols-12 gap-16 items-center">
               {/* Graphic (Left) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
                 variants={fadeInUp}
                 className="lg:col-span-6 flex justify-center"
               >
-                <div 
+                <div
                   onClick={triggerSOSModal}
                   className="w-full max-w-[480px] bg-red-950/10 border border-red-900/40 rounded-3xl p-5 shadow-xl text-left cursor-pointer hover:bg-red-950/20 transition-colors"
                 >
@@ -1003,14 +934,14 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Copy (Right) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
                 variants={fadeInUp}
                 className="lg:col-span-6 flex flex-col space-y-6"
               >
-                <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">05</div>
+                <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">04</div>
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Emergency SOS Assistance</h3>
                 <p className="text-slate-500 font-medium leading-relaxed">
                   In emergency events, milliseconds matter. Our active emergency SOS protocol instantly retrieves your high-precision location coordinates, binds it with basic health data, and routes dispatch coordinates to medical teams in less than five seconds.
@@ -1023,17 +954,17 @@ export default function RedesignedLandingPage() {
               </motion.div>
             </div>
 
-            {/* Feature 6: Medicine Reminder System */}
+            {/* Feature 5: Medicine Reminder System */}
             <div className="grid lg:grid-cols-12 gap-16 items-center">
               {/* Copy (Left) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
                 variants={fadeInUp}
                 className="lg:col-span-6 lg:order-1 flex flex-col space-y-6"
               >
-                <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">06</div>
+                <div className="h-10 w-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">05</div>
                 <h3 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Medicine Reminder System</h3>
                 <p className="text-slate-500 font-medium leading-relaxed">
                   Never miss a medication dosage. Set up custom dosage intake alarms, keep track of daily adherence streaks, and configure alerts to trigger notifications on smart devices, and alert family members if an essential dose is skipped.
@@ -1046,7 +977,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Graphic (Right) */}
-              <motion.div 
+              <motion.div
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -1103,9 +1034,9 @@ export default function RedesignedLandingPage() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
 
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12 text-center flex flex-col items-center">
-            
+
             {/* Title Info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -1124,7 +1055,7 @@ export default function RedesignedLandingPage() {
             </motion.div>
 
             {/* Glowing Big SOS Button */}
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               whileInView={{ scale: 1, opacity: 1 }}
               viewport={{ once: true }}
@@ -1135,8 +1066,8 @@ export default function RedesignedLandingPage() {
               <span className="animate-ping absolute inline-flex h-36 w-36 rounded-full bg-red-650 opacity-40"></span>
               <span className="animate-ping absolute inline-flex h-44 w-44 rounded-full bg-red-650 opacity-20"></span>
               <span className="animate-ping absolute inline-flex h-56 w-56 rounded-full bg-red-650 opacity-10"></span>
-              
-              <button 
+
+              <button
                 onClick={triggerSOSModal}
                 className="relative z-10 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-tr from-red-600 to-red-500 text-white font-black text-3xl shadow-[0_0_50px_rgba(239,68,68,0.4)] ring-8 ring-slate-900 transition-all hover:scale-105 active:scale-95 duration-350 cursor-pointer"
               >
@@ -1153,7 +1084,7 @@ export default function RedesignedLandingPage() {
                 { label: "4. Support Activated", desc: "Ambulance dispatched & active doctor verification." }
               ].map((step, idx) => (
                 <div key={idx} className="flex flex-col items-center relative text-center">
-                  
+
                   {/* Glowing Connection Light line between flow boxes on tablet+ */}
                   {idx < 3 && (
                     <div className="hidden md:block absolute top-6 left-[60%] right-[-40%] h-[3px] bg-slate-800 -z-0">
@@ -1165,7 +1096,7 @@ export default function RedesignedLandingPage() {
                   <div className={`h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-sm mb-4 transition-all duration-500 ${sosStep === idx ? 'bg-red-600 text-white scale-110 shadow-lg shadow-red-600/30' : 'bg-slate-800 text-slate-400'}`}>
                     {idx + 1}
                   </div>
-                  
+
                   <h4 className={`text-base font-bold transition-colors duration-500 ${sosStep === idx ? 'text-red-400' : 'text-slate-200'}`}>
                     {step.label}
                   </h4>
@@ -1184,9 +1115,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section id="ecosystem" className="py-28 bg-white relative overflow-hidden">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-            
+
             {/* Centered Heading */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -1206,7 +1137,7 @@ export default function RedesignedLandingPage() {
 
             {/* Split layout Dashboards */}
             <div className="grid lg:grid-cols-2 gap-16 relative items-center">
-              
+
               {/* Laser line effect in middle */}
               <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[2px] h-[80%] bg-slate-100 z-0">
                 {/* Moving light dot */}
@@ -1214,7 +1145,7 @@ export default function RedesignedLandingPage() {
               </div>
 
               {/* Patient Dashboard Preview (Left) */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -1256,7 +1187,7 @@ export default function RedesignedLandingPage() {
               </motion.div>
 
               {/* Doctor Dashboard Preview (Right) */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -1304,9 +1235,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section id="why-mediai" className="py-24 bg-[#F8FAFC] border-t border-b border-slate-100">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-            
+
             {/* Header info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -1325,7 +1256,7 @@ export default function RedesignedLandingPage() {
             </motion.div>
 
             {/* Comparison Table */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
@@ -1343,7 +1274,7 @@ export default function RedesignedLandingPage() {
                 <tbody className="divide-y divide-slate-100 text-slate-700 font-semibold text-xs sm:text-sm">
                   {[
                     { feature: "Appointment Booking", traditional: "2 to 3 weeks waiting list", mediai: "Instant matching & same-day video" },
-                    { feature: "Emergency Access", traditional: "Standard 911 queues, manual details", mediai: "Under 5s GPS telemetry dispatch" },
+                    { feature: "Emergency Access", traditional: "Standard 112 queues, manual details", mediai: "Under 5s GPS telemetry dispatch" },
                     { feature: "Medical Records", traditional: "Scattered files, paper folders", mediai: "AES-256 encrypted, unified history" },
                     { feature: "AI Assistance", traditional: "None — must wait for initial consult", mediai: "24/7 reference-verified diagnostics" },
                     { feature: "Prescription Analysis", traditional: "Hard-to-read handwritten pages", mediai: "OCR scanning, digital alarm reminders" },
@@ -1369,9 +1300,9 @@ export default function RedesignedLandingPage() {
           <div className="absolute top-1/2 left-0 right-0 h-40 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none" />
 
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-            
+
             {/* Header info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -1417,7 +1348,7 @@ export default function RedesignedLandingPage() {
                   color: "from-emerald-400 to-teal-600"
                 }
               ].map((t, idx) => (
-                <motion.div 
+                <motion.div
                   key={idx}
                   initial="hidden"
                   whileInView="visible"
@@ -1430,7 +1361,7 @@ export default function RedesignedLandingPage() {
                   className="bg-white/45 backdrop-blur-md border border-slate-200/50 shadow-xl rounded-3xl p-8 flex flex-col justify-between min-h-[300px] hover:border-teal-500/20 hover:shadow-2xl transition-all duration-350 relative overflow-hidden"
                 >
                   <Quote className="absolute top-6 right-6 h-12 w-12 text-slate-100/50 z-0" />
-                  
+
                   <div className="relative z-10 space-y-4">
                     {/* Stars */}
                     <div className="flex gap-1.5 text-amber-400">
@@ -1465,9 +1396,9 @@ export default function RedesignedLandingPage() {
             ================================== */}
         <section id="faq" className="py-24 bg-[#F8FAFC]">
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-            
+
             {/* Header info */}
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
@@ -1490,24 +1421,24 @@ export default function RedesignedLandingPage() {
               {faqItems.map((item, idx) => {
                 const isActive = activeFAQ === idx
                 return (
-                  <div 
+                  <div
                     key={idx}
                     className="bg-white border border-slate-200/50 rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:border-teal-500/20"
                   >
-                    <button 
+                    <button
                       onClick={() => setActiveFAQ(isActive ? null : idx)}
                       className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-slate-900 hover:text-teal-600 transition-colors text-base"
                     >
                       <span>{item.question}</span>
-                      <ChevronDown 
-                        size={18} 
-                        className={`text-slate-400 transition-transform duration-300 ${isActive ? 'rotate-180 text-teal-500' : ''}`} 
+                      <ChevronDown
+                        size={18}
+                        className={`text-slate-400 transition-transform duration-300 ${isActive ? 'rotate-180 text-teal-500' : ''}`}
                       />
                     </button>
-                    
+
                     <AnimatePresence initial={false}>
                       {isActive && (
-                        <motion.div 
+                        <motion.div
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
@@ -1535,7 +1466,7 @@ export default function RedesignedLandingPage() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#14B8A6_0%,transparent_60%)] opacity-10 pointer-events-none" />
 
           <div className="mx-auto max-w-[1400px] px-6 sm:px-12 text-center relative z-10 w-full">
-            <motion.div 
+            <motion.div
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
@@ -1548,7 +1479,7 @@ export default function RedesignedLandingPage() {
               <p className="text-slate-500 font-medium text-lg sm:text-xl max-w-xl mx-auto leading-relaxed">
                 Join the future of healthcare powered by secure, reliable artificial intelligence models.
               </p>
-              
+
               <div className="flex flex-wrap gap-5 justify-center pt-4">
                 <Link href="/register">
                   <Button className="bg-[#0F172A] hover:bg-teal-600 text-white font-extrabold px-8 py-7 rounded-full text-base tracking-wide shadow-xl shadow-slate-950/15 hover:shadow-teal-500/25 transition-all duration-350 cursor-pointer">
@@ -1572,7 +1503,7 @@ export default function RedesignedLandingPage() {
           ================================== */}
       <footer className="bg-[#060D18] text-slate-400 relative z-10 pt-24 pb-12 border-t border-slate-900">
         <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
             {/* Column 1 Brand Info */}
             <div className="lg:col-span-2 space-y-6">
@@ -1585,11 +1516,11 @@ export default function RedesignedLandingPage() {
               <p className="text-slate-400 leading-relaxed font-semibold max-w-sm text-sm">
                 Revolutionizing medical support with clinical-grade AI symptom checker modules, handwriting OCR engines, secure specialist appointment booking and sub-5s emergency SOS broadcast channels.
               </p>
-              
+
               {/* Social micro icon buttons */}
               <div className="flex gap-4">
                 <a href="#" aria-label="Twitter" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 hover:text-teal-400 hover:border-teal-500/30 hover:scale-110 transition-all duration-300 cursor-pointer">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M4 4l11.733 16h4.267l-11.733 -16z" /><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" /></svg>
                 </a>
                 <a href="#" aria-label="Facebook" className="h-8 w-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 hover:text-teal-400 hover:border-teal-500/30 hover:scale-110 transition-all duration-300 cursor-pointer">
                   <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
@@ -1641,7 +1572,7 @@ export default function RedesignedLandingPage() {
             <p className="text-slate-500 font-semibold text-xs sm:text-sm text-center md:text-left">
               &copy; {new Date().getFullYear()} MediAI Ecosystem. All rights reserved.
             </p>
-            
+
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 hover:text-slate-300 transition-colors cursor-pointer font-bold">
                 <svg className="w-4 h-4 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>

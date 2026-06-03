@@ -92,7 +92,7 @@ export default function DoctorChat() {
           console.error("Failed to fetch chat history:", historyErr)
         }
       } catch (err) {
-        toast.error("Failed to initialize chat")
+        toast.error(err.response?.data?.message || "Failed to initialize chat")
       } finally {
         setIsLoading(false)
       }
@@ -103,7 +103,7 @@ export default function DoctorChat() {
 
   // Auto-open history modal when chatId param is present (e.g. from follow-up notification) or redirect to active chat
   useEffect(() => {
-    if (!chatIdParam || doctorId) return;
+    if (!chatIdParam || chatIdParam === 'null' || chatIdParam === 'undefined' || doctorId) return;
     const fetchAndOpenChat = async () => {
       try {
         const res = await api.get(`/chats/${chatIdParam}`);
@@ -113,7 +113,7 @@ export default function DoctorChat() {
           // If the chat is not ended, ALWAYS redirect to the live chat window!
           if (chatData.status !== 'ended') {
             const docId = chatData.doctor?._id || chatData.doctor;
-            router.replace(`/patient/chat?doctorId=${docId}&resume=true`);
+            router.replace(`/patient/chat?doctorId=${docId}&chatId=${chatData._id}&resume=true`);
             return;
           }
 
@@ -748,8 +748,8 @@ export default function DoctorChat() {
     )
   }
 
-  // If status is "rescheduled"
-  if (chat?.status === 'rescheduled') {
+  // If status is "rescheduled" and there are NO messages, show blocking screen
+  if (chat?.status === 'rescheduled' && (!chat.messages || chat.messages.length === 0)) {
     return (
       <div className="h-[calc(100vh-8rem)] flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center p-8 space-y-6 shadow-xl border-amber-100">
@@ -758,16 +758,16 @@ export default function DoctorChat() {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Doctor is Busy</h2>
-            <p className="text-slate-500 mt-2">Dr. {doctor.fullName} has rescheduled your consultation.</p>
+            <p className="text-slate-500 mt-2">Dr. {doctor.fullName} has declined your consultation request.</p>
           </div>
           <div className="p-5 bg-amber-50 rounded-xl border border-amber-100 text-left">
-            <p className="text-xs text-amber-600 uppercase font-bold mb-3">New Appointment Time</p>
+            <p className="text-xs text-amber-600 uppercase font-bold mb-3">Status</p>
             <div className="flex items-center gap-3 text-slate-900 font-bold text-lg">
               <Calendar className="h-5 w-5 text-amber-600" />
-              {chat.scheduledTime || "To be confirmed"}
+              Doctor is currently busy
             </div>
           </div>
-          <p className="text-sm text-slate-500">A notification has been sent to your dashboard.</p>
+          <p className="text-sm text-slate-500">Please try again later or book a scheduled appointment.</p>
           <Button className="w-full bg-teal-600 hover:bg-teal-700" onClick={() => router.push('/patient/appointments')}>View Appointments</Button>
         </Card>
       </div>
@@ -778,6 +778,12 @@ export default function DoctorChat() {
     <div className="h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-6">
       {/* Main Chat Area */}
       <div className="flex flex-col h-full w-full md:w-8/12">
+        {chat?.status === 'rescheduled' && chat.messages?.length > 0 && (
+          <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
+            <Clock className="h-5 w-5 text-amber-500 animate-pulse" />
+            <span>Dr. {doctor.fullName} has rescheduled your consultation to {chat.scheduledTime || "To be confirmed"}. You can still read their messages here.</span>
+          </div>
+        )}
         {doctor?.onlineStatus === 'break' && (
           <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3 text-orange-800 text-sm font-semibold shadow-sm animate-in slide-in-from-top duration-300 shrink-0">
             <Clock className="h-5 w-5 text-orange-500 animate-pulse" />

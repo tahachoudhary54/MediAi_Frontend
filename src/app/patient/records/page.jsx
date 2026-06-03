@@ -1,25 +1,92 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Heart, Activity, Droplet, AlertTriangle, FileText, Download, User, Calendar } from "lucide-react"
+import { Heart, Activity, Droplet, AlertTriangle, FileText, Download, User, Calendar, Trash2 } from "lucide-react"
+import api from "@/lib/api"
+import { toast } from "react-hot-toast"
 
 export default function HealthRecords() {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef(null)
+
+  const fetchProfile = async () => {
+    try {
+      const res = await api.get('/auth/me');
+      if (res.data.success) {
+        setUser(res.data.data);
+        sessionStorage.setItem('user', JSON.stringify(res.data.data));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = sessionStorage.getItem('user')
-      if (storedUser) {
-        const parsed = JSON.parse(storedUser)
-        setUser(parsed.user || parsed)
-      }
-      setIsLoading(false)
-    }
+    fetchProfile()
   }, [])
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadRes = await api.post('/uploads', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (uploadRes.data.success) {
+        const fileUrl = uploadRes.data.data.url;
+        const newDoc = {
+          title: file.name,
+          url: fileUrl
+        };
+        
+        const currentDocs = user.documents || [];
+        const updatedDocs = [...currentDocs, newDoc];
+        
+        const updateRes = await api.patch('/auth/profile', { documents: updatedDocs });
+        
+        if (updateRes.data.success) {
+          toast.success("Document uploaded successfully");
+          fetchProfile();
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload document");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  const handleDeleteDocument = async (docId) => {
+    if (!window.confirm("Delete this document?")) return;
+    try {
+      const currentDocs = user.documents || [];
+      const updatedDocs = currentDocs.filter(d => d._id !== docId);
+      
+      const updateRes = await api.patch('/auth/profile', { documents: updatedDocs });
+      
+      if (updateRes.data.success) {
+        toast.success("Document deleted");
+        fetchProfile();
+      }
+    } catch (err) {
+      toast.error("Failed to delete document");
+    }
+  }
 
   if (isLoading) {
     return (
@@ -168,16 +235,40 @@ export default function HealthRecords() {
                 <FileText className="h-5 w-5 text-indigo-600" />
                 Medical Documents
               </CardTitle>
-              <Button variant="ghost" size="sm" className="text-teal-600 hover:bg-teal-50 font-semibold">Upload New</Button>
+              <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
+              <Button variant="ghost" size="sm" className="text-teal-600 hover:bg-teal-50 font-semibold" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                {isUploading ? "Uploading..." : "Upload New"}
+              </Button>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="text-center py-12 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-3">
-                  <FileText className="h-6 w-6 text-slate-400" />
+              {user.documents && user.documents.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {user.documents.map((doc, i) => (
+                    <div key={doc._id || i} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-xl border border-slate-200 hover:border-teal-200 transition-colors">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <FileText className="h-5 w-5 text-teal-600" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-slate-800 hover:text-teal-600 truncate">{doc.title}</a>
+                          <span className="text-xs text-slate-500">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 h-8 w-8 rounded-lg shrink-0" onClick={() => handleDeleteDocument(doc._id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <h4 className="text-sm font-semibold text-slate-900">No documents uploaded</h4>
-                <p className="text-xs text-slate-500 max-w-[200px] mx-auto mt-1">Keep your prescriptions and test results organized in one place.</p>
-              </div>
+              ) : (
+                <div className="text-center py-12 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm mb-3">
+                    <FileText className="h-6 w-6 text-slate-400" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-slate-900">No documents uploaded</h4>
+                  <p className="text-xs text-slate-500 max-w-[200px] mx-auto mt-1">Keep your prescriptions and test results organized in one place.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

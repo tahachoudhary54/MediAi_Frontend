@@ -446,12 +446,19 @@ export function WebRTCCall({ role }) {
     if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => track.stop())
     if (socketRef.current) socketRef.current.disconnect()
     
-    // Check if we are in doctor panel or patient panel, go back to chat
-    if (role === 'doctor') {
-      router.push(`/doctor/chat/${chatId}`)
-    } else {
-      router.push(`/patient/chat?chatId=${chatId}&resume=true`)
+    // Automatically formally end the consultation when a video call ends!
+    try {
+      await api.put(`/chats/${chatId}/end`)
+    } catch (err) {
+      console.log('Consultation already ended or failed to end auto', err)
     }
+    
+    // Check if we are in doctor panel or patient panel, go back to chat
+      if (role === 'doctor') {
+        router.push(`/doctor/chat/${chatId}`)
+      } else {
+        router.push(`/patient/appointments`)
+      }
   }
 
   // Render a dedicated professional voice call UI if isVideo is false

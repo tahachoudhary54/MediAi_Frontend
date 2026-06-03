@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabList, Tab, TabPanel } from "@/components/ui/tabs";
 import { Table, TableHeader, TableBody, TableRow, TableCell, TableHead } from "@/components/ui/table";
-import { Users, Search, Calendar, FileText, Activity, HeartPulse, AlertTriangle, User, Phone, Droplet, ShieldAlert, FileClock } from "lucide-react";
+import { Users, Search, Calendar, FileText, Activity, HeartPulse, AlertTriangle, User, Phone, Droplet, ShieldAlert, FileClock, MessageSquare } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 

@@ -10,6 +10,7 @@ import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
 import { Button } from "@/components/ui/button"
 import { MessageSquare, Bell } from "lucide-react"
+import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 let patientSocket = null;
 
@@ -22,6 +23,7 @@ export default function PatientLayout({ children }) {
 
   const [incomingDoctorRequest, setIncomingDoctorRequest] = useState(null);
   const [followUpNotification, setFollowUpNotification] = useState(null);
+  const [globalSocket, setGlobalSocket] = useState(null);
   const notifAudioRef = useRef(null);
   const notifTimers = useRef([]);
 
@@ -65,6 +67,7 @@ export default function PatientLayout({ children }) {
           autoConnect: false
         });
       }
+      setGlobalSocket(patientSocket);
 
       // Remove duplicate socket listeners before adding
       patientSocket.off("connect");
@@ -260,44 +263,44 @@ export default function PatientLayout({ children }) {
       {/* Incoming Doctor Consultation Modal */}
       {incomingDoctorRequest && !pathname.includes(incomingDoctorRequest._id) && (
         <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-700/50">
-            <div className="bg-gradient-to-br from-teal-900 to-teal-950 p-8 text-center relative border-b border-teal-800/50">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={handleDeclineDoctorRequest}
-                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition-all"
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold transition-all shadow-sm border border-slate-200"
                 title="Decline"
               >✕</button>
               
               <div className="relative mx-auto w-20 h-20 mb-6">
-                <div className="absolute inset-0 rounded-full border-2 border-teal-500/30 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-[#0f172a]">
+                <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
+                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <MessageSquare className="h-8 w-8 text-white" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-teal-950 flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
                    <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
                 </div>
               </div>
               
-              <h3 className="text-2xl font-extrabold text-white tracking-tight">Consultation Request</h3>
-              <p className="text-teal-200/80 text-sm mt-2 font-medium">Dr. {incomingDoctorRequest.doctor?.fullName} wants to connect with you</p>
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Consultation Request</h3>
+              <p className="text-teal-700 text-sm mt-2 font-medium">Dr. {incomingDoctorRequest.doctor?.fullName} wants to connect with you</p>
             </div>
 
-            <div className="p-8 space-y-6">
-              <div className="flex items-center gap-4 p-5 bg-slate-800/50 rounded-2xl border border-slate-700/50">
-                <div className="h-14 w-14 rounded-full bg-slate-700 flex items-center justify-center text-teal-400 font-bold text-xl border border-slate-600 shadow-inner">
+            <div className="p-8 space-y-6 bg-white">
+              <div className="flex items-center gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="h-14 w-14 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-xl border border-teal-200 shadow-sm">
                   {incomingDoctorRequest.doctor?.fullName?.charAt(0) || 'D'}
                 </div>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Doctor</p>
-                  <p className="text-xl font-bold text-slate-100 truncate">Dr. {incomingDoctorRequest.doctor?.fullName}</p>
+                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Doctor</p>
+                  <p className="text-xl font-bold text-slate-900 truncate">Dr. {incomingDoctorRequest.doctor?.fullName}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-14 rounded-xl border-slate-700 bg-slate-800/80 text-slate-300 font-bold hover:bg-slate-700 hover:text-white transition-all" onClick={handleDeclineDoctorRequest}>
+                <Button variant="outline" className="h-14 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm" onClick={handleDeclineDoctorRequest}>
                   Decline
                 </Button>
-                <Button className="h-14 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)] transition-all flex items-center justify-center gap-2" onClick={handleAcceptDoctorRequest}>
+                <Button className="h-14 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 transition-all flex items-center justify-center gap-2" onClick={handleAcceptDoctorRequest}>
                   Accept Consultation
                 </Button>
               </div>
@@ -308,41 +311,41 @@ export default function PatientLayout({ children }) {
       {/* Incoming Doctor Follow-up Message Notification */}
       {followUpNotification && (
         <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0f172a] rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-700/50">
-            <div className="bg-gradient-to-br from-teal-900 to-teal-950 p-8 text-center relative border-b border-teal-800/50">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 fade-in duration-300 border border-slate-100">
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 p-8 text-center relative border-b border-slate-100">
               <button
                 onClick={() => {
                   notifTimers.current.forEach(t => clearTimeout(t));
                   notifTimers.current = [];
                   setFollowUpNotification(null);
                 }}
-                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white font-bold transition-all"
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-600 font-bold transition-all shadow-sm border border-slate-200"
                 title="Dismiss"
               >✕</button>
 
               <div className="relative mx-auto w-20 h-20 mb-6">
-                <div className="absolute inset-0 rounded-full border-2 border-teal-500/30 animate-ping"></div>
-                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-[#0f172a]">
+                <div className="absolute inset-0 rounded-full border-2 border-teal-200 animate-ping"></div>
+                <div className="relative h-20 w-20 bg-gradient-to-b from-teal-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30 border-4 border-white">
                   <Bell className="h-8 w-8 text-white" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-teal-950 flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full border-4 border-white flex items-center justify-center">
                   <div className="h-2 w-2 bg-white rounded-full animate-pulse"></div>
                 </div>
               </div>
 
-              <h3 className="text-2xl font-extrabold text-white tracking-tight">New Message</h3>
-              <p className="text-teal-200/80 text-sm mt-2 font-medium">
+              <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">New Message</h3>
+              <p className="text-teal-700 text-sm mt-2 font-medium">
                 Dr. {followUpNotification.doctorName} sent you a follow-up
               </p>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 bg-white">
               {/* Message preview */}
-              <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/50">
-                <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <MessageSquare className="h-3.5 w-3.5 text-teal-400" /> Message
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <MessageSquare className="h-3.5 w-3.5 text-teal-500" /> Message
                 </p>
-                <p className="text-slate-100 text-sm leading-relaxed line-clamp-3">
+                <p className="text-slate-900 text-sm leading-relaxed line-clamp-3">
                   {followUpNotification.message?.content}
                 </p>
               </div>
@@ -350,7 +353,7 @@ export default function PatientLayout({ children }) {
               <div className="grid grid-cols-2 gap-4">
                 <Button
                   variant="outline"
-                  className="h-14 rounded-xl border-slate-700 bg-slate-800/80 text-slate-300 font-bold hover:bg-slate-700 hover:text-white transition-all"
+                  className="h-14 rounded-xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 transition-all shadow-sm"
                   onClick={() => {
                     notifTimers.current.forEach(t => clearTimeout(t));
                     notifTimers.current = [];
@@ -360,7 +363,7 @@ export default function PatientLayout({ children }) {
                   Dismiss
                 </Button>
                 <Button
-                  className="h-14 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-extrabold shadow-[0_0_20px_rgba(20,184,166,0.3)] hover:shadow-[0_0_25px_rgba(20,184,166,0.5)] transition-all flex items-center justify-center gap-2"
+                  className="h-14 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 transition-all flex items-center justify-center gap-2"
                   onClick={() => {
                     notifTimers.current.forEach(t => clearTimeout(t));
                     notifTimers.current = [];
@@ -375,6 +378,9 @@ export default function PatientLayout({ children }) {
           </div>
         </div>
       )}
+      
+      {/* Global Incoming Call Modal */}
+      {globalSocket && <IncomingCallModal socket={globalSocket} />}
     </div>
   )
 }

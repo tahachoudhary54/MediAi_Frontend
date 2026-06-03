@@ -22,7 +22,6 @@ export default function AppointmentsPage() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [chatNowAlert, setChatNowAlert] = useState(null) // { doctorName, doctorId, aptId }
-  const alertedAptIds = useRef(new Set())
 
   // Patient Rescheduling modal states
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false)
@@ -151,8 +150,16 @@ export default function AppointmentsPage() {
   useEffect(() => {
     const checkAppointmentTime = () => {
       const now = new Date()
+      // Load alerted IDs from localStorage to persist across reloads
+      let alertedIds = []
+      try {
+        const stored = localStorage.getItem('alertedAptIds')
+        if (stored) alertedIds = JSON.parse(stored)
+      } catch (e) {}
+      const alertedSet = new Set(alertedIds)
+
       appointments.forEach(apt => {
-        if (alertedAptIds.current.has(apt._id)) return
+        if (alertedSet.has(apt._id)) return
         if (apt.status !== 'confirmed' && apt.status !== 'scheduled' && apt.status !== 'pending') return
 
         // Parse appointment date + time string (e.g. "10:30 AM")
@@ -168,7 +175,10 @@ export default function AppointmentsPage() {
         // Trigger popup within a ±5 min window of appointment time
         const diffMs = aptDate - now
         if (diffMs >= -5 * 60 * 1000 && diffMs <= 5 * 60 * 1000) {
-          alertedAptIds.current.add(apt._id)
+          alertedSet.add(apt._id)
+          try {
+            localStorage.setItem('alertedAptIds', JSON.stringify([...alertedSet]))
+          } catch(e) {}
           setChatNowAlert({
             doctorName: apt.doctor?.fullName || 'your doctor',
             doctorId: apt.doctor?._id,
@@ -184,6 +194,19 @@ export default function AppointmentsPage() {
     const timer = setInterval(checkAppointmentTime, 60 * 1000) // check every minute
     return () => clearInterval(timer)
   }, [appointments])
+
+  const handleStartVideoCall = async (apt) => {
+    try {
+      const res = await api.post('/chats', { appointmentId: apt._id })
+      if (res.data.success) {
+        const chatId = res.data.data._id
+        window.location.href = `/patient/video-call?chatId=${chatId}&isVideo=true`
+      }
+    } catch (err) {
+      console.error("Failed to start video call", err)
+      toast.error(err.response?.data?.message || "Failed to start video call")
+    }
+  }
 
   const handleBookAppointment = async (e) => {
     e.preventDefault()
@@ -348,11 +371,13 @@ export default function AppointmentsPage() {
                 </Link>
 
                 {chatNowAlert.consultationType === 'online' && (
-                  <Link href="/patient/video-call" onClick={() => setChatNowAlert(null)}>
-                    <Button variant="outline" className="w-full gap-2 h-10 border-indigo-200 text-indigo-700 hover:bg-indigo-50">
-                      <Video className="h-4 w-4" /> Join Video Call
-                    </Button>
-                  </Link>
+                  <Button variant="outline" className="w-full gap-2 h-10 border-indigo-200 text-indigo-700 hover:bg-indigo-50" onClick={() => {
+                    const apt = appointments.find(a => a._id === chatNowAlert.aptId)
+                    if (apt) handleStartVideoCall(apt)
+                    setChatNowAlert(null)
+                  }}>
+                    <Video className="h-4 w-4" /> Join Video Call
+                  </Button>
                 )}
 
                 <button
@@ -507,7 +532,7 @@ export default function AppointmentsPage() {
                         {apt.consultationType === "online" && (
                           <Button
                             className="w-full bg-indigo-600 hover:bg-indigo-700"
-                            onClick={() => window.location.href = `/patient/video-call`}
+                            onClick={() => handleStartVideoCall(apt)}
                           >
                             <Video className="h-4 w-4 mr-2" /> Video Call
                           </Button>

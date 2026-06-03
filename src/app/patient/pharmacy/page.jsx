@@ -10,6 +10,67 @@ import { ShoppingBag, Plus, Trash2, Clock, CheckCircle, Truck, Package, XCircle,
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
+const SearchableMedicineSelect = ({ availableMedicines, selectedId, onChange }) => {
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const selectedMed = availableMedicines.find(m => m._id === selectedId);
+  const displayValue = selectedMed ? `${selectedMed.name} ${selectedMed.mg ? `(${selectedMed.mg}mg)` : ""} - ₹${Math.round(selectedMed.price * (1 - (selectedMed.discount || 0) / 100))}` : "";
+
+  const filtered = availableMedicines.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div className="relative w-full">
+      <div 
+        className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span className={selectedMed ? "" : "text-slate-500"}>{displayValue || "Select a medicine..."}</span>
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 flex flex-col">
+          <div className="p-2 border-b border-slate-100 flex items-center gap-2 sticky top-0 bg-slate-50 z-20">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input 
+              type="text" 
+              className="w-full text-sm outline-none bg-transparent" 
+              placeholder="Search medicine..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {filtered.map(med => {
+              const discount = med.discount || 0;
+              const discountedPrice = Math.round(med.price * (1 - discount / 100));
+              return (
+                <div 
+                  key={med._id} 
+                  className="px-3 py-2 text-sm hover:bg-slate-50 cursor-pointer flex flex-col gap-1 border-b border-slate-50 last:border-0"
+                  onClick={() => {
+                    onChange(med._id);
+                    setIsOpen(false);
+                    setSearch("");
+                  }}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="font-medium text-slate-800">{med.name}</span> {med.mg && <span className="text-slate-500 text-xs">({med.mg}mg)</span>}
+                    </div>
+                    <span className="text-teal-600 font-semibold">₹{discountedPrice}</span>
+                  </div>
+                </div>
+              )
+            })}
+            {filtered.length === 0 && <div className="p-4 text-center text-sm text-slate-500">No medicines found</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 export default function PatientPharmacy() {
   const router = useRouter()
   const [orders, setOrders] = useState([])
@@ -194,22 +255,11 @@ export default function PatientPharmacy() {
                   {cart.map((item, index) => (
                     <div key={index} className="flex items-start gap-2 bg-slate-50 p-3 rounded-lg border border-slate-100">
                       <div className="flex-1 space-y-3">
-                        <select
-                          className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
-                          value={item.medicineId}
-                          onChange={(e) => handleMedicineSelect(index, e.target.value)}
-                        >
-                          <option value="">Select a medicine...</option>
-                          {availableMedicines.map(med => {
-                            const discount = med.discount || 0;
-                            const discountedPrice = Math.round(med.price * (1 - discount / 100));
-                            return (
-                              <option key={med._id} value={med._id}>
-                                {med.name} {med.mg ? `(${med.mg}mg)` : ""} - ₹{discountedPrice} {discount > 0 ? `(${discount}% OFF)` : ""} (In stock: {med.quantity})
-                              </option>
-                            )
-                          })}
-                        </select>
+                        <SearchableMedicineSelect 
+                          availableMedicines={availableMedicines}
+                          selectedId={item.medicineId}
+                          onChange={(val) => handleMedicineSelect(index, val)}
+                        />
                         <div className="flex items-center gap-2">
                           <Label className="text-xs text-slate-500">Qty:</Label>
                           <Input 

@@ -11,6 +11,7 @@ import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
+import { IncomingCallModal } from "@/components/shared/IncomingCallModal"
 
 export default function DoctorLayout({ children }) {
   const router = useRouter()
@@ -22,6 +23,7 @@ export default function DoctorLayout({ children }) {
   const [incomingRequest, setIncomingRequest] = useState(null)
   const [isRescheduling, setIsRescheduling] = useState(false)
   const [rescheduleTime, setRescheduleTime] = useState("")
+  const [globalSocket, setGlobalSocket] = useState(null)
   // Track dismissed/rejected chat IDs so polling never re-shows them
   const dismissedChatIds = useRef(new Set())
   // Preload the notification sound once so there is no gap on second play
@@ -98,6 +100,7 @@ export default function DoctorLayout({ children }) {
         withCredentials: true,
         transports: ['websocket', 'polling']
       });
+      setGlobalSocket(socket);
 
       socket.on("connect", () => {
         console.log(`[Socket] Doctor joined room: doctor_${doctorId}`);
@@ -188,7 +191,7 @@ export default function DoctorLayout({ children }) {
 
   const handleAccept = async () => {
     try {
-      await api.put(`/chats/${incomingRequest._id}/respond`, { status: 'accepted' })
+      await api.put(`/chats/${incomingRequest._id}/respond`, { status: 'active' })
 
       // Automatically update status to busy
       try {
@@ -329,6 +332,9 @@ export default function DoctorLayout({ children }) {
           </div>
         </div>
       )}
+      
+      {/* Global Incoming Call Modal */}
+      {globalSocket && <IncomingCallModal socket={globalSocket} />}
     </div>
   )
 }
