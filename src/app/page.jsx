@@ -1277,8 +1277,7 @@ export default function RedesignedLandingPage() {
                     { feature: "Emergency Access", traditional: "Standard 112 queues, manual details", mediai: "Under 5s GPS telemetry dispatch" },
                     { feature: "Medical Records", traditional: "Scattered files, paper folders", mediai: "AES-256 encrypted, unified history" },
                     { feature: "AI Assistance", traditional: "None — must wait for initial consult", mediai: "24/7 reference-verified diagnostics" },
-                    { feature: "Prescription Analysis", traditional: "Hard-to-read handwritten pages", mediai: "OCR scanning, digital alarm reminders" },
-                    { feature: "Doctor Availability", traditional: "Restricted office hours, high costs", mediai: "24/7 certified specialist networks" }
+                    { feature: "Prescription Analysis", traditional: "Hard-to-read handwritten pages", mediai: "OCR scanning, digital alarm reminders" }
                   ].map((row, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 transition-colors duration-250">
                       <td className="p-6 font-bold text-slate-900">{row.feature}</td>
