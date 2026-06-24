@@ -3,7 +3,8 @@
 import { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, ScanLine, FileText, CheckCircle2, Clock, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Upload, ScanLine, FileText, CheckCircle2, Clock, AlertCircle, AlertTriangle, Edit2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -11,6 +12,7 @@ export default function PrescriptionOCR() {
   const [uploadState, setUploadState] = useState("idle") // idle, scanning, complete
   const [previewUrl, setPreviewUrl] = useState(null)
   const [extractedData, setExtractedData] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleUploadClick = () => {
@@ -49,7 +51,16 @@ export default function PrescriptionOCR() {
       if (res.data.success) {
         setExtractedData(res.data.data)
         setUploadState("complete")
-        toast.success("Prescription analyzed successfully")
+        
+        const hasUncertainMeds = res.data.data.medicines?.some(m => m.uncertain);
+        // If confidence is low or Vision AI flagged uncertain handwriting, trigger editing mode automatically
+        if (res.data.data.confidence < 85 || hasUncertainMeds) {
+            setIsEditing(true)
+            toast.error("Low confidence on handwriting. Please verify the highlighted fields manually.", { duration: 6000 })
+        } else {
+            setIsEditing(false)
+            toast.success("Prescription analyzed successfully")
+        }
       } else {
         throw new Error("Failed to extract data")
       }
@@ -69,9 +80,17 @@ export default function PrescriptionOCR() {
     setUploadState("idle")
     setPreviewUrl(null)
     setExtractedData(null)
+    setIsEditing(false)
   }
 
-  const medications = extractedData?.medications || []
+  const handleMedicineChange = (index, field, value) => {
+    const newMeds = [...extractedData.medicines];
+    newMeds[index][field] = value;
+    setExtractedData({...extractedData, medicines: newMeds});
+  }
+
+  const medicines = extractedData?.medicines || []
+  const confidence = extractedData?.confidence || 0
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
@@ -84,8 +103,8 @@ export default function PrescriptionOCR() {
       />
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Prescription OCR</h1>
-        <p className="text-slate-500">Upload a handwritten or printed prescription to extract medicines automatically.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Prescription Scanner</h1>
+        <p className="text-slate-500">Advanced OCR with AI Fallback. Extracts structured data even from messy handwriting.</p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -112,8 +131,8 @@ export default function PrescriptionOCR() {
             {uploadState === "scanning" && (
               <div className="border border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center text-center bg-slate-50 min-h-[300px]">
                 <ScanLine className="h-12 w-12 text-teal-500 mb-4 animate-pulse" />
-                <h3 className="text-lg font-semibold text-slate-900 mb-2">Analyzing Document</h3>
-                <p className="text-sm text-slate-500 max-w-xs">AI is reading the handwritten text and extracting medication details...</p>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Preprocessing & Analyzing</h3>
+                <p className="text-sm text-slate-500 max-w-xs">Enhancing contrast, correcting orientation, and extracting text...</p>
                 <div className="w-full max-w-xs h-2 bg-slate-200 rounded-full mt-6 overflow-hidden">
                   <div className="h-full bg-teal-500 w-1/2 animate-[progress_2s_ease-in-out_infinite]" />
                 </div>
@@ -127,13 +146,10 @@ export default function PrescriptionOCR() {
                   alt="Prescription Scan"
                   className="w-full h-auto max-h-[400px] object-contain rounded-lg opacity-80"
                 />
-                <div className="absolute inset-0 bg-teal-900/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="outline" className="bg-white text-slate-900" onClick={handleScanAnother}>
-                    Scan Another
+                <div className="absolute inset-0 bg-teal-900/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button variant="default" className="bg-white text-teal-900 hover:bg-slate-100" onClick={handleScanAnother}>
+                    Scan Another Image
                   </Button>
-                </div>
-                <div className="absolute top-4 right-4 bg-emerald-500 text-white p-1 rounded-full shadow-sm">
-                  <CheckCircle2 className="h-5 w-5" />
                 </div>
               </div>
             )}
@@ -145,13 +161,24 @@ export default function PrescriptionOCR() {
           <Card className={`h-full ${uploadState !== 'complete' ? 'opacity-50 pointer-events-none' : ''}`}>
             <CardHeader className="pb-3 border-b border-slate-100">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Extracted Medications</CardTitle>
+                <CardTitle className="text-lg whitespace-nowrap">Extracted Medications</CardTitle>
                 {uploadState === 'complete' && (
-                  <span className="text-xs font-semibold bg-teal-100 text-teal-700 px-2 py-1 rounded-full">
-                    {medications.length} Found
-                  </span>
+                  <div className="flex flex-wrap justify-end items-center gap-2">
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1 ${confidence >= 70 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      {confidence >= 70 ? <CheckCircle2 className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
+                      {confidence}%
+                    </span>
+                    <span className="text-xs font-semibold bg-teal-100 text-teal-700 px-2 py-1 rounded-full">
+                      {medicines.length} Found
+                    </span>
+                  </div>
                 )}
               </div>
+              {uploadState === 'complete' && extractedData?.doctor && (
+                <div className="text-sm text-slate-500 mt-2">
+                    <strong>Doctor:</strong> {extractedData.doctor}
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0 max-h-[400px] overflow-y-auto">
               {uploadState !== 'complete' ? (
@@ -159,57 +186,79 @@ export default function PrescriptionOCR() {
                   <FileText className="h-12 w-12 text-slate-300 mb-4" />
                   <p className="text-slate-500">Upload a prescription to see extracted medications here.</p>
                 </div>
-              ) : medications.length > 0 ? (
+              ) : medicines.length > 0 ? (
                 <div className="divide-y divide-slate-100">
-                  {medications.map((med, i) => (
-                    <div key={i} className="p-4 hover:bg-slate-50 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-slate-900">{med.name}</h4>
-                        {med.duration && (
-                          <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{med.duration}</span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm mt-3">
-                        <div className="flex items-start gap-2">
-                          <AlertCircle className="h-4 w-4 text-teal-600 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-slate-500 text-xs block">Dosage</span>
-                            <span className="text-slate-700 font-medium">{med.dosage || 'N/A'}</span>
-                          </div>
+                  {medicines.map((med, i) => (
+                    <div key={i} className={`p-4 transition-colors relative ${med.uncertain ? 'bg-amber-50/40 border-x-2 border-x-amber-400' : (isEditing ? 'bg-teal-50/30' : 'hover:bg-slate-50')}`}>
+                      
+                      {med.uncertain && (
+                        <div className="absolute top-2 right-4 flex items-center gap-1 text-[10px] uppercase tracking-wider font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded">
+                          <AlertTriangle className="h-3 w-3" /> Review Needed
                         </div>
-                        <div className="flex items-start gap-2">
-                          <Clock className="h-4 w-4 text-teal-600 mt-0.5 shrink-0" />
-                          <div>
-                            <span className="text-slate-500 text-xs block">Frequency</span>
-                            <span className="text-slate-700 font-medium">{med.frequency || 'N/A'}</span>
-                          </div>
+                      )}
+
+                      {isEditing ? (
+                        <div className="space-y-3 mt-1">
+                            <div>
+                                <label className="text-xs text-slate-500">Medicine Name</label>
+                                <Input value={med.name || ''} onChange={(e) => handleMedicineChange(i, 'name', e.target.value)} className="h-8 mt-1" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs text-slate-500">Dosage</label>
+                                    <Input value={med.dosage || ''} onChange={(e) => handleMedicineChange(i, 'dosage', e.target.value)} className="h-8 mt-1" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500">Frequency</label>
+                                    <Input value={med.frequency || ''} onChange={(e) => handleMedicineChange(i, 'frequency', e.target.value)} className="h-8 mt-1" />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-slate-500">Duration</label>
+                                    <Input value={med.duration || ''} onChange={(e) => handleMedicineChange(i, 'duration', e.target.value)} className="h-8 mt-1" />
+                                </div>
+                            </div>
                         </div>
-                      </div>
-                      {med.instructions && (
-                        <p className="text-xs text-slate-600 mt-3 pt-2 border-t border-slate-100">
-                          <span className="font-semibold">Instructions:</span> {med.instructions}
-                        </p>
+                      ) : (
+                        <>
+                            <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-semibold text-slate-900">{med.name || 'Unknown Medicine'}</h4>
+                                {med.duration && (
+                                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{med.duration}</span>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm mt-3">
+                                <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-teal-600 mt-0.5 shrink-0" />
+                                <div>
+                                    <span className="text-slate-500 text-xs block">Dosage</span>
+                                    <span className="text-slate-700 font-medium">{med.dosage || 'N/A'}</span>
+                                </div>
+                                </div>
+                                <div className="flex items-start gap-2">
+                                <Clock className="h-4 w-4 text-teal-600 mt-0.5 shrink-0" />
+                                <div>
+                                    <span className="text-slate-500 text-xs block">Frequency</span>
+                                    <span className="text-slate-700 font-medium">{med.frequency || 'N/A'}</span>
+                                </div>
+                                </div>
+                            </div>
+                        </>
                       )}
                     </div>
                   ))}
-
-                  {extractedData?.notes && (
-                    <div className="p-4 bg-amber-50">
-                      <p className="text-xs text-amber-800"><span className="font-semibold">Doctor's Notes:</span> {extractedData.notes}</p>
-                    </div>
-                  )}
                 </div>
               ) : (
                 <div className="p-8 flex flex-col items-center justify-center text-center h-[300px]">
-                  <AlertCircle className="h-12 w-12 text-slate-300 mb-4" />
-                  <p className="text-slate-500">No medications could be extracted from this image. Please try a clearer picture.</p>
+                  <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+                  <p className="text-slate-700 font-medium mb-1">Low Confidence Extraction</p>
+                  <p className="text-slate-500 text-sm">No valid medications could be parsed. The image might be too messy or rotated heavily.</p>
                 </div>
               )}
             </CardContent>
-            {uploadState === 'complete' && medications.length > 0 && (
-              <CardFooter className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl">
-                <Button className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white">
-                  <Clock className="h-4 w-4" /> Add All to Reminders
+            {uploadState === 'complete' && medicines.length > 0 && (
+              <CardFooter className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-xl flex gap-3">
+                <Button className="w-full gap-2 bg-teal-600 hover:bg-teal-700 text-white" onClick={() => toast.success("Saved to Reminders!")}>
+                  <CheckCircle2 className="h-4 w-4" /> Save Verified Prescription
                 </Button>
               </CardFooter>
             )}

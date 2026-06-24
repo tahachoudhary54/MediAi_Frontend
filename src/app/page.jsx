@@ -8,10 +8,11 @@ import {
   Heart, UserPlus, ScanText, Bell, Lock, FileText, Star, Quote, ChevronRight,
   MessageSquare, Brain, UserCheck, Download, Play, Video, Phone, MapPin,
   HeartPulse, Plus, Menu, X, HelpCircle, FileCheck, CheckCircle2, ChevronDown,
-  ArrowUpRight, AlertTriangle, Stethoscope, RefreshCw, Calendar, TrendingUp
+  ArrowUpRight, AlertTriangle, Stethoscope, RefreshCw, Calendar, TrendingUp, ShieldAlert
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { GuestSOSModal } from "@/components/GuestSOSModal"
+import { FloatingEmergencyScanButton } from "@/components/FloatingEmergencyScanButton"
 
 // Section 2: Trust Card Items
 const trustCards = [
@@ -165,6 +166,11 @@ export default function RedesignedLandingPage() {
 
           {/* Right Action */}
           <div className="hidden lg:flex items-center gap-6">
+            <Link href="/emergency-scan" className="text-sm font-bold text-red-500 hover:text-red-600 transition-colors flex items-center gap-1.5 group relative py-1">
+              <ShieldAlert size={16} className="animate-pulse" />
+              Emergency Scan
+              <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-red-500 transition-all duration-300 group-hover:w-full" />
+            </Link>
             <Link href="/login" className="text-sm font-bold text-slate-700 hover:text-teal-600 transition-colors group relative py-1">
               Login
               <span className="absolute bottom-0 left-0 h-[2px] w-0 bg-teal-500 transition-all duration-300 group-hover:w-full" />
@@ -446,6 +452,138 @@ export default function RedesignedLandingPage() {
                 </div>
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* ==================================
+            EMERGENCY SCAN FEATURE BLOCK (NEW)
+            ================================== */}
+        <section className="py-20 bg-slate-900 relative overflow-hidden">
+          {/* Background gradients for warning/emergency theme */}
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-red-600/20 blur-[120px] pointer-events-none"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600/20 blur-[120px] pointer-events-none"></div>
+
+          <div className="mx-auto max-w-[1400px] px-6 sm:px-12 relative z-10">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              
+              {/* Left Side: Text and CTAs */}
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="space-y-8"
+              >
+                <div>
+                  <span className="flex items-center gap-2 text-red-400 font-bold uppercase tracking-wider text-sm mb-4">
+                    <ShieldAlert size={18} className="animate-pulse" />
+                    Life-Saving Feature
+                  </span>
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight mb-4">
+                    🚨 Emergency Scan – Identify Patients Instantly
+                  </h2>
+                  <p className="text-slate-400 text-lg leading-relaxed max-w-xl">
+                    Use AI to identify registered patients in emergency situations and get life-saving contact information within seconds.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    "Instant Face Recognition for Emergency Situations",
+                    "Works even in low-light or accident environments",
+                    "Shows only emergency contact & essential info",
+                    "Secure & opt-in based system",
+                    "Doctor mode available for full medical access"
+                  ].map((point, idx) => (
+                    <div key={idx} className="flex items-center gap-3 text-slate-300">
+                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-red-500/20 flex items-center justify-center text-red-400">
+                        <Check size={14} strokeWidth={3} />
+                      </div>
+                      <span className="font-medium text-slate-200">{point}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                  <Link href="/emergency-scan" className="w-full sm:w-auto">
+                    <Button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-6 rounded-xl text-lg shadow-lg shadow-red-600/25 transition-all">
+                      Start Emergency Scan
+                    </Button>
+                  </Link>
+                  <Link href="#how-it-works" className="w-full sm:w-auto">
+                    <Button variant="outline" className="w-full border border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white font-bold px-8 py-6 rounded-xl text-lg transition-all">
+                      Learn How It Works
+                    </Button>
+                  </Link>
+                </div>
+
+                <p className="text-slate-500 text-xs flex items-start gap-2 max-w-md pt-2">
+                  <Lock size={14} className="flex-shrink-0 mt-0.5" />
+                  Only registered and opted-in users are discoverable. Sensitive medical data is protected and role-based.
+                </p>
+              </motion.div>
+
+              {/* Right Side: Visual Scan Animation */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="relative lg:h-[500px] flex items-center justify-center mt-10 lg:mt-0"
+              >
+                {/* Glowing border container */}
+                <div className="relative w-full max-w-[360px] aspect-[3/4] bg-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl shadow-red-900/20 overflow-hidden">
+                  
+                  {/* Fake UI Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/80 bg-slate-900">
+                    <span className="text-red-400 font-bold tracking-widest text-xs uppercase">Emergency Mode</span>
+                    <ShieldAlert size={18} className="text-red-500 animate-pulse" />
+                  </div>
+
+                  {/* Camera Viewport Simulation */}
+                  <div className="relative w-full h-[calc(100%-3.5rem)] bg-slate-900 overflow-hidden flex flex-col items-center justify-center">
+                    
+                    {/* Dummy Face Outline */}
+                    <div className="absolute inset-0 opacity-30 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent"></div>
+                    
+                    <svg viewBox="0 0 100 100" className="w-3/5 h-3/5 text-slate-700/50 mb-10">
+                      <path d="M50 10 C30 10 20 30 20 50 C20 75 35 90 50 90 C65 90 80 75 80 50 C80 30 70 10 50 10 Z" fill="none" stroke="currentColor" strokeWidth="3" strokeDasharray="5 5" />
+                      {/* Eyes */}
+                      <circle cx="35" cy="45" r="4" fill="currentColor" />
+                      <circle cx="65" cy="45" r="4" fill="currentColor" />
+                      {/* Mouth */}
+                      <path d="M40 70 Q50 80 60 70" fill="none" stroke="currentColor" strokeWidth="3" />
+                    </svg>
+
+                    {/* Scanning Line Animation */}
+                    <motion.div 
+                      className="absolute top-0 left-0 w-full h-1 bg-teal-400 shadow-[0_0_20px_5px_rgba(45,212,191,0.5)]"
+                      animate={{ y: [0, 400, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    />
+
+                    {/* Floating Info Boxes simulating recognition process */}
+                    <motion.div 
+                      className="absolute top-10 left-4 bg-slate-950/80 backdrop-blur border border-slate-800 rounded-lg p-2.5 flex items-center gap-2 shadow-xl"
+                      animate={{ opacity: [0, 1, 1, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, times: [0, 0.2, 0.8, 1] }}
+                    >
+                      <ScanText size={14} className="text-teal-400" />
+                      <span className="text-xs text-slate-300 font-mono">Extracting 128-pt facial map...</span>
+                    </motion.div>
+                    
+                    <motion.div 
+                      className="absolute bottom-16 right-4 bg-emerald-950/80 backdrop-blur border border-emerald-900/50 rounded-lg p-3 flex items-center gap-2 shadow-xl"
+                      animate={{ opacity: [0, 0, 1, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, times: [0, 0.6, 0.8, 1] }}
+                    >
+                      <CheckCircle2 size={16} className="text-emerald-400" />
+                      <span className="text-sm text-emerald-300 font-bold">Patient Identified</span>
+                    </motion.div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
         </section>
 
@@ -1588,6 +1726,7 @@ export default function RedesignedLandingPage() {
 
       {/* Actual Functional Emergency SOS Modal binding */}
       <GuestSOSModal />
+      <FloatingEmergencyScanButton />
     </div>
   )
 }

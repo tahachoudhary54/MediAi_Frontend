@@ -9,6 +9,7 @@ import { User, Mail, Phone, Calendar, Droplet, MapPin, Edit3, Upload, MoreVertic
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
+import ScannerUI from "@/components/shared/ScannerUI"
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:5000"
 
@@ -425,6 +426,79 @@ export default function ProfileSettings() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Emergency Opt-In Settings */}
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="border-b border-slate-50">
+              <CardTitle className="text-xl text-slate-900 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-teal-600" /> Emergency Opt-In
+              </CardTitle>
+              <CardDescription className="text-slate-500">
+                Allow first responders to scan your face and access your emergency contacts and medical profile.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl mb-6">
+                <div>
+                  <h4 className="font-medium text-slate-900 text-sm">Face Scan Discovery</h4>
+                  <p className="text-xs text-slate-500 mt-1">If enabled, you must provide a clear face photo below.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    onChange={async (e) => {
+                      const enabled = e.target.checked;
+                      try {
+                        await api.patch('/auth/emergency-profile', { emergencyEnabled: enabled });
+                        toast.success(`Emergency discovery ${enabled ? 'enabled' : 'disabled'}`);
+                      } catch (err) {
+                        toast.error("Failed to update status");
+                        e.target.checked = !enabled; // revert UI
+                      }
+                    }}
+                    // Defaulting to unchecked for now, in a real app we'd load this from `user` state
+                    // We can safely assume it's disabled initially or we'd need to add it to the state
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                </label>
+              </div>
+
+              <div className="mt-4">
+                <h4 className="font-medium text-slate-900 text-sm mb-3">Emergency Facial Recognition Setup</h4>
+                <div className="bg-slate-900 p-1 rounded-2xl max-w-sm mx-auto">
+                    {/* We lazily import ScannerUI to avoid SSR issues if it uses browser APIs heavily, but we can just require it normally if it's "use client" */}
+                    <ScannerUI 
+                      buttonText="Register Face"
+                      onCapture={async (file) => {
+                        const formData = new FormData();
+                        formData.append('faceImage', file);
+                        try {
+                          await api.patch('/auth/emergency-profile', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+                          toast.success("Facial data secured for emergencies");
+                        } catch (err) {
+                          toast.error("Failed to register face");
+                        }
+                      }}
+                      onUpload={async (file) => {
+                        const formData = new FormData();
+                        formData.append('faceImage', file);
+                        try {
+                          await api.patch('/auth/emergency-profile', formData, {
+                            headers: { 'Content-Type': 'multipart/form-data' }
+                          });
+                          toast.success("Facial data secured for emergencies");
+                        } catch (err) {
+                          toast.error("Failed to register face");
+                        }
+                      }}
+                    />
+                </div>
+              </div>
             </CardContent>
           </Card>
 

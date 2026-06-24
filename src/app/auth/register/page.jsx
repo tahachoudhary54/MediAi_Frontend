@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useRef } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff } from "lucide-react"
+import { Activity, Upload, CheckCircle2, Clock, XCircle, AlertCircle, Image as ImageIcon, FileText, Eye, EyeOff, X } from "lucide-react"
 import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
@@ -35,6 +35,12 @@ function RegisterContent() {
   const [files, setFiles] = useState({
     governmentId: null, degreeCertificate: null, medicalLicenseProof: null, profilePhoto: null
   })
+
+  const [showCamera, setShowCamera] = useState(false)
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const [cameraStream, setCameraStream] = useState(null)
+
 
   const isPatient = role === "patient"
   const isDoctor = role === "doctor"
@@ -85,12 +91,70 @@ function RegisterContent() {
     return () => clearInterval(timer);
   }, [resendTimer]);
 
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setCameraStream(stream);
+      setShowCamera(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      toast.error("Could not access camera. Please allow permissions.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], "profile_capture.jpg", { type: "image/jpeg" });
+          setFiles({ ...files, profilePhoto: file });
+          stopCamera();
+        } else {
+          toast.error("Failed to capture image. Please try again.");
+        }
+      }, 'image/jpeg');
+    }
+  };
+
   const handleChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value })
 
   const handleFileChange = (e, field) => {
     if (e.target.files && e.target.files[0]) {
       setFiles({ ...files, [field]: e.target.files[0] })
     }
+  }
+
+  const clearProfilePhoto = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFiles({ ...files, profilePhoto: null });
   }
 
   const handleResendOtp = async () => {
@@ -190,21 +254,24 @@ function RegisterContent() {
           }
         }
       } else {
-        const payload = {
-          fullName,
-          email: formData.email,
-          password: formData.password,
-          age: formData.age,
-          sex: (formData.sex || "").toLowerCase(),
-          bloodGroup: formData.bloodGroup,
-          allergies: formData.allergies,
-          currentMedications: formData.medications,
-          previousDiseaseHistory: formData.history,
-          familyDiseaseHistory: formData.familyHistory,
-          emergencyContact: {
-            name: formData.emergencyName,
-            phone: formData.emergencyPhone
-          }
+        const payload = new FormData();
+        payload.append('fullName', fullName);
+        payload.append('email', formData.email);
+        payload.append('password', formData.password);
+        payload.append('age', formData.age);
+        payload.append('sex', (formData.sex || "").toLowerCase());
+        payload.append('bloodGroup', formData.bloodGroup);
+        payload.append('allergies', formData.allergies);
+        payload.append('currentMedications', formData.medications);
+        payload.append('previousDiseaseHistory', formData.history);
+        payload.append('familyDiseaseHistory', formData.familyHistory);
+        payload.append('emergencyContact', JSON.stringify({
+          name: formData.emergencyName,
+          phone: formData.emergencyPhone
+        }));
+
+        if (files.profilePhoto) {
+          payload.append('profilePhoto', files.profilePhoto);
         }
 
         const res = await api.post('/auth/register', payload)
@@ -462,6 +529,54 @@ function RegisterContent() {
                     </div>
                   </div>
 
+                  <div className="space-y-4">
+                    <div className="border-b border-slate-100 pb-2">
+                      <h3 className="text-lg font-semibold text-slate-900">Profile Photo</h3>
+                      <p className="text-xs text-slate-500">Personalize your account (Optional).</p>
+                    </div>
+                    <div className="space-y-2 w-full">
+                      {showCamera ? (
+                        <div className="border-2 border-slate-200 rounded-lg p-4 flex flex-col items-center">
+                          <video ref={videoRef} autoPlay playsInline className="w-full max-w-sm rounded-lg object-cover bg-black aspect-video mb-4"></video>
+                          <canvas ref={canvasRef} className="hidden"></canvas>
+                          <div className="flex gap-4">
+                            <Button type="button" onClick={capturePhoto} className="bg-teal-600 hover:bg-teal-700">Capture</Button>
+                            <Button type="button" onClick={stopCamera} variant="outline">Cancel</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <Label htmlFor="file-pho-patient" className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-teal-50 hover:border-teal-200 transition-colors group">
+                          <input type="file" id="file-pho-patient" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'profilePhoto')} />
+                          {files.profilePhoto ? (
+                            <div className="flex flex-col items-center relative">
+                              <button type="button" onClick={clearProfilePhoto} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors z-10">
+                                <X className="h-3 w-3" />
+                              </button>
+                              <img src={URL.createObjectURL(files.profilePhoto)} alt="Preview" className="w-20 h-20 object-cover rounded-full mb-3 border-2 border-teal-500 shadow-md" />
+                              <span className="text-sm font-medium text-teal-600 group-hover:text-teal-700 transition-colors">Change Photo</span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="p-2 bg-slate-100 rounded-full mb-2 group-hover:bg-teal-100 transition-colors">
+                                <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-teal-600" />
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">Upload Photo</span>
+                              <span className="text-xs text-slate-400 mt-1">Clear headshot</span>
+                            </>
+                          )}
+                        </Label>
+                      )}
+                      
+                      {!showCamera && (
+                        <div className="text-center mt-2">
+                          <Button type="button" variant="ghost" onClick={startCamera} className="text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50">
+                            Or take a photo with your camera
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="flex gap-4 pt-4 border-t border-slate-100">
                     <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)}>Back</Button>
                     <Button type="submit" className="w-full">Create Account</Button>
@@ -578,14 +693,44 @@ function RegisterContent() {
                       {/* Profile Photo */}
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">Profile Photo <span className="text-slate-400 font-normal">(Optional)</span></Label>
-                        <Label htmlFor="file-pho" className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-teal-50 hover:border-teal-200 transition-colors group">
-                          <input type="file" id="file-pho" className="hidden" onChange={(e) => handleFileChange(e, 'profilePhoto')} />
-                          <div className="p-2 bg-slate-100 rounded-full mb-2 group-hover:bg-teal-100 transition-colors">
-                            <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-teal-600" />
+                        {showCamera ? (
+                          <div className="border-2 border-slate-200 rounded-lg p-4 flex flex-col items-center">
+                            <video ref={videoRef} autoPlay playsInline className="w-full max-w-sm rounded-lg object-cover bg-black aspect-video mb-4"></video>
+                            <canvas ref={canvasRef} className="hidden"></canvas>
+                            <div className="flex gap-4">
+                              <Button type="button" onClick={capturePhoto} className="bg-teal-600 hover:bg-teal-700">Capture</Button>
+                              <Button type="button" onClick={stopCamera} variant="outline">Cancel</Button>
+                            </div>
                           </div>
-                          <span className="text-sm font-medium text-slate-700">{files.profilePhoto ? files.profilePhoto.name : 'Upload Photo'}</span>
-                          <span className="text-xs text-slate-400 mt-1">Clear headshot</span>
-                        </Label>
+                        ) : (
+                          <Label htmlFor="file-pho" className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-teal-50 hover:border-teal-200 transition-colors group">
+                            <input type="file" id="file-pho" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'profilePhoto')} />
+                            {files.profilePhoto ? (
+                              <div className="flex flex-col items-center relative">
+                                <button type="button" onClick={clearProfilePhoto} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md transition-colors z-10">
+                                  <X className="h-3 w-3" />
+                                </button>
+                                <img src={URL.createObjectURL(files.profilePhoto)} alt="Preview" className="w-20 h-20 object-cover rounded-full mb-3 border-2 border-teal-500 shadow-md" />
+                                <span className="text-sm font-medium text-teal-600 group-hover:text-teal-700 transition-colors">Change Photo</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="p-2 bg-slate-100 rounded-full mb-2 group-hover:bg-teal-100 transition-colors">
+                                  <ImageIcon className="h-5 w-5 text-slate-500 group-hover:text-teal-600" />
+                                </div>
+                                <span className="text-sm font-medium text-slate-700">Upload Photo</span>
+                                <span className="text-xs text-slate-400 mt-1">Clear headshot</span>
+                              </>
+                            )}
+                          </Label>
+                        )}
+                        {!showCamera && (
+                          <div className="text-center mt-2">
+                            <Button type="button" variant="ghost" onClick={startCamera} className="text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50">
+                              Or take a photo with your camera
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

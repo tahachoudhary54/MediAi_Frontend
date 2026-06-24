@@ -59,6 +59,7 @@ export function Sidebar({ role }) {
     doctor: [
       { name: "Dashboard", href: "/doctor/dashboard", icon: LayoutDashboard },
       { name: "Patient Queue", href: "/doctor/patient-queue", icon: Users },
+      { name: "Emergency Scanner", href: "/doctor/emergency-scan", icon: ScanLine, variant: "destructive" },
       { name: "Chat with Patients", href: "/doctor/chat", icon: MessageSquare },
       { name: "Report Verification", href: "/doctor/report-verification", icon: CheckSquare },
       { name: "Appointments", href: "/doctor/appointments", icon: Calendar },
