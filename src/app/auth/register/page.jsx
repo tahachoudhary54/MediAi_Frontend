@@ -25,6 +25,7 @@ function RegisterContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [otp, setOtp] = useState("")
   const [resendTimer, setResendTimer] = useState(60) // Start with 60s cooldown initially when they enter step 3
+  const [isLoading, setIsLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     firstName: "", lastName: "", email: "", password: "", phone: "",
@@ -209,6 +210,7 @@ function RegisterContent() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setError("")
+    setIsLoading(true)
 
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim()
@@ -292,6 +294,8 @@ function RegisterContent() {
       const errorMsg = err.response?.data?.message || err.message || "Registration failed. Please try again."
       setError(errorMsg)
       toast.error(errorMsg)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -578,8 +582,17 @@ function RegisterContent() {
                   </div>
 
                   <div className="flex gap-4 pt-4 border-t border-slate-100">
-                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)}>Back</Button>
-                    <Button type="submit" className="w-full">Create Account</Button>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        "Create Account"
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
@@ -743,8 +756,17 @@ function RegisterContent() {
                   </div>
 
                   <div className="flex gap-4 pt-4 border-t border-slate-100">
-                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)}>Back</Button>
-                    <Button type="submit" className="w-full">Submit Verification Request</Button>
+                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? (
+                        <>
+                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        "Submit Verification Request"
+                      )}
+                    </Button>
                   </div>
                 </div>
               )}
