@@ -510,7 +510,7 @@ export default function RedesignedLandingPage() {
                       Start Emergency Scan
                     </Button>
                   </Link>
-                  <Link href="#how-it-works" className="w-full sm:w-auto">
+                  <Link href="#emergency-scan-steps" className="w-full sm:w-auto">
                     <Button variant="outline" className="w-full border border-slate-700 bg-transparent text-slate-300 hover:bg-slate-800 hover:text-white font-bold px-8 py-6 rounded-xl text-lg transition-all">
                       Learn How It Works
                     </Button>
@@ -583,6 +583,76 @@ export default function RedesignedLandingPage() {
                   </div>
                 </div>
               </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* ==================================
+            EMERGENCY SCAN STEPS BLOCK
+            ================================== */}
+        <section id="emergency-scan-steps" className="py-24 bg-slate-950 relative overflow-hidden">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-600/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="mx-auto max-w-[1400px] px-6 sm:px-12">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={fadeInUp}
+              className="max-w-2xl mx-auto text-center mb-16 space-y-4 relative z-10"
+            >
+              <span className="text-xs font-bold uppercase tracking-widest text-red-400 bg-red-950/60 border border-red-900/50 px-4 py-1.5 rounded-full inline-block">
+                HOW EMERGENCY SCAN WORKS
+              </span>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                Secure Identity Verification
+              </h2>
+              <p className="text-slate-400 font-medium text-base sm:text-lg">
+                Four automated steps to ensure accurate patient identification when they are unable to provide their details.
+              </p>
+            </motion.div>
+
+            <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+              {[
+                { label: "1. Initiate Scan", desc: "Open the scanner directly from the portal without login.", icon: ShieldAlert },
+                { label: "2. Extract Biometrics", desc: "AI maps 128 facial points securely.", icon: ScanText },
+                { label: "3. Encrypted Match", desc: "Cross-checks against opted-in users.", icon: Lock },
+                { label: "4. Access Vitals", desc: "Instantly display allergies & contacts.", icon: HeartPulse }
+              ].map((step, idx) => {
+                const StepIcon = step.icon;
+                return (
+                  <motion.div 
+                    key={idx} 
+                    className="flex flex-col items-center relative text-center"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.15, duration: 0.5 }}
+                  >
+                    {/* Connection Line */}
+                    {idx < 3 && (
+                      <div className="hidden md:block absolute top-10 left-[60%] right-[-40%] h-[2px] bg-slate-800 -z-0">
+                        <div className={`h-full bg-red-500 transition-all duration-1000 ${sosStep === idx ? 'w-full opacity-100 shadow-[0_0_8px_#ef4444]' : 'w-0 opacity-0'}`} />
+                      </div>
+                    )}
+
+                    {/* Icon Circle */}
+                    <div className={`h-20 w-20 rounded-2xl flex items-center justify-center mb-6 relative z-10 transition-all duration-500 ${sosStep === idx ? 'bg-red-600 text-white scale-110 shadow-[0_0_20px_rgba(220,38,38,0.4)] border border-red-500' : 'bg-slate-900 border border-slate-800 shadow-lg group hover:border-red-500/50'}`}>
+                      <StepIcon className={`h-8 w-8 transition-colors ${sosStep === idx ? 'text-white' : 'text-red-400'}`} />
+                      <div className={`absolute -top-2 -right-2 h-6 w-6 rounded-full text-xs font-bold flex items-center justify-center transition-colors duration-500 ${sosStep === idx ? 'bg-white text-red-600 shadow-md' : 'bg-red-600 text-white'}`}>
+                        {idx + 1}
+                      </div>
+                    </div>
+
+                    <h4 className="text-lg font-bold text-white mb-2">
+                      {step.label}
+                    </h4>
+                    <p className="text-slate-400 text-sm font-medium leading-relaxed px-2">
+                      {step.desc}
+                    </p>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
