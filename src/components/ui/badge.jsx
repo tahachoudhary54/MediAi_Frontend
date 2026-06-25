@@ -3,13 +3,13 @@ import { cn } from "@/lib/utils"
 
 function Badge({ className, variant = "default", ...props }) {
   const variants = {
-    default: "border-transparent bg-slate-900 text-slate-50 hover:bg-slate-900/80",
-    secondary: "border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80",
-    destructive: "border-transparent bg-red-500 text-slate-50 hover:bg-red-500/80",
+    default: "border-transparent bg-slate-900 text-slate-50",
+    secondary: "border-transparent bg-slate-100 text-slate-900",
+    destructive: "border-transparent bg-red-500 text-slate-50",
     outline: "text-slate-950",
-    success: "border-transparent bg-emerald-500 text-white hover:bg-emerald-500/80",
-    warning: "border-transparent bg-amber-500 text-white hover:bg-amber-500/80",
-    teal: "border-transparent bg-teal-100 text-teal-800 hover:bg-teal-200/80",
+    success: "border-transparent bg-emerald-500 text-white",
+    warning: "border-transparent bg-amber-500 text-white",
+    teal: "border-transparent bg-teal-100 text-teal-800",
   }
 
   return (

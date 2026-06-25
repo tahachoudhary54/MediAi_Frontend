@@ -36,7 +36,7 @@ export default function DoctorAppointments() {
       setError("")
       const res = await api.get('/appointments/doctor')
       if (res.data.success) {
-        setAppointments(res.data.data.sort((a, b) => new Date(b.date) - new Date(a.date)))
+        setAppointments(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
       }
     } catch (err) {
       console.error("Appointment fetch error:", err.response?.data || err.message || err)
