@@ -92,7 +92,7 @@ export default function RedesignedLandingPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setSosStep((prev) => (prev + 1) % 4)
-    }, 3000)
+    }, 1000)
     return () => clearInterval(interval)
   }, [])
 
