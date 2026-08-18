@@ -3,7 +3,7 @@ import axios from 'axios';
 // Force localhost in development regardless of cached .env
 const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost';
 const api = axios.create({
-  baseURL: isLocalhost ? 'http://localhost:5001/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'),
+  baseURL: isLocalhost ? 'http://localhost:5000/api' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'),
 });
 
 // Request interceptor to add the auth token
