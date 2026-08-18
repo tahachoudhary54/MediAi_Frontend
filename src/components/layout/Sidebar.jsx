@@ -89,7 +89,7 @@ export function Sidebar({ role }) {
     super_admin: [
       { name: "Platform Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
       { name: "Platform Users", href: "/admin/users", icon: Users },
-      { name: "Manage Admins", href: "/super-admin/admins", icon: ShieldCheck },
+      { name: "Manage Hospitals", href: "/super-admin/admins", icon: ShieldCheck },
       { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
       { name: "Ambulance Fleet", href: "/super-admin/ambulances", icon: Truck },
       { name: "Platform Analytics", href: "/super-admin/analytics", icon: Activity },

@@ -91,7 +91,7 @@ export default function SuperAdminDashboard() {
               bgColorClass="bg-emerald-50"
             />
             <StatCard 
-              title="Platform Admins" 
+              title="Registered Hospitals" 
               value={stats.totalAdmins || 0} 
               icon={ShieldCheck} 
               colorClass="text-purple-600" 
@@ -143,7 +143,7 @@ export default function SuperAdminDashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <a href="/super-admin/admins" className="flex flex-col items-center justify-center p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors border border-indigo-100">
                   <ShieldCheck className="h-8 w-8 text-indigo-600 mb-2" />
-                  <span className="font-medium text-indigo-900">Manage Admins</span>
+                  <span className="font-medium text-indigo-900">Manage Hospitals</span>
                 </a>
                 <a href="/super-admin/emergency-control" className="flex flex-col items-center justify-center p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-colors border border-red-100">
                   <AlertTriangle className="h-8 w-8 text-red-600 mb-2" />

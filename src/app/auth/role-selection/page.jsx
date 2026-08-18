@@ -26,8 +26,8 @@ export default function RoleSelectionPage() {
     },
     {
       id: "admin",
-      title: "I am an Admin",
-      description: "Monitor platform health, verify doctors, and manage users.",
+      title: "I am a Hospital",
+      description: "Manage your institution and staff doctors.",
       icon: ShieldCheck,
       href: "/auth/login?role=admin", // Admins usually login directly, not register
       color: "text-slate-600",

@@ -150,15 +150,15 @@ export default function ManageAdmins() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Platform Admins</h1>
-          <p className="text-slate-500 mt-1">Manage regional and operational administrators.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Registered Hospitals</h1>
+          <p className="text-slate-500 mt-1">Manage registered hospitals and clinics.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
           className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Admin
+          Add Hospital
         </button>
       </div>
 
@@ -167,7 +167,7 @@ export default function ManageAdmins() {
           <table className="w-full text-left">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Admin Name</th>
+                <th className="px-6 py-4 text-sm font-semibold text-slate-600">Hospital Name</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Email</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Region</th>
                 <th className="px-6 py-4 text-sm font-semibold text-slate-600">Status</th>
@@ -178,7 +178,7 @@ export default function ManageAdmins() {
               {admins.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                    No admins found. Create one to get started.
+                    No hospitals found. Create one to get started.
                   </td>
                 </tr>
               ) : (
@@ -250,7 +250,7 @@ export default function ManageAdmins() {
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="text-lg font-semibold text-slate-800 flex items-center">
                 <Shield className="w-5 h-5 mr-2 text-indigo-600" />
-                Create New Admin
+                Register New Hospital
               </h3>
               <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">&times;</button>
             </div>
@@ -273,7 +273,7 @@ export default function ManageAdmins() {
               </div>
               <div className="pt-4 flex justify-end space-x-3">
                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded-lg">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700">Create Admin</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700">Register Hospital</button>
               </div>
             </form>
           </div>

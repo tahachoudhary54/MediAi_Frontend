@@ -20,9 +20,10 @@ export function AuthProvider({ children }) {
     const loadAuth = () => {
       console.log("[AuthContext] loadAuth started (sessionStorage)");
       try {
-        const storedToken = sessionStorage.getItem('token')
-        const storedRole = sessionStorage.getItem('role')
-        const storedUser = sessionStorage.getItem('user')
+        const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+        const storedToken = activeStorage.getItem('token')
+        const storedRole = activeStorage.getItem('role')
+        const storedUser = activeStorage.getItem('user')
 
         console.log("[AuthContext] Stored data:", { storedToken: !!storedToken, storedRole, hasUser: !!storedUser });
 
@@ -81,11 +82,12 @@ export function AuthProvider({ children }) {
               }
               return actualUser;
             })
+            const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
             if (actualUser.role) {
               setRole(actualUser.role)
-              sessionStorage.setItem('role', actualUser.role)
+              activeStorage.setItem('role', actualUser.role)
             }
-            sessionStorage.setItem('user', JSON.stringify(actualUser))
+            activeStorage.setItem('user', JSON.stringify(actualUser))
           }
         } catch (err) {
           console.error("[AuthContext] verifyToken failed:", err.response?.status)
@@ -104,7 +106,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const handleProfileUpdated = () => {
       console.log("[AuthContext] Profile updated event received. Synching user state...");
-      const storedUser = sessionStorage.getItem('user')
+      const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+      const storedUser = activeStorage.getItem('user')
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -143,7 +146,8 @@ export function AuthProvider({ children }) {
             } else if (data.status !== 'break') {
               updated.breakExpiresAt = undefined;
             }
-            sessionStorage.setItem('user', JSON.stringify(updated));
+            const activeStorage = localStorage.getItem('token') ? localStorage : sessionStorage;
+            activeStorage.setItem('user', JSON.stringify(updated));
             return updated;
           });
         }
@@ -155,13 +159,18 @@ export function AuthProvider({ children }) {
     };
   }, [authLoaded, user?._id, role]);
 
-  const login = useCallback((userData, userToken, userRole) => {
+  const login = useCallback((userData, userToken, userRole, rememberMe = false) => {
     console.log("[AuthContext] login() called with role:", userRole);
     
+    const storage = rememberMe ? localStorage : sessionStorage;
+    
     // Set storage FIRST
-    sessionStorage.setItem('token', userToken)
-    sessionStorage.setItem('role', userRole)
-    sessionStorage.setItem('user', JSON.stringify(userData))
+    storage.setItem('token', userToken)
+    if (userData.refreshToken) {
+      storage.setItem('refreshToken', userData.refreshToken)
+    }
+    storage.setItem('role', userRole)
+    storage.setItem('user', JSON.stringify(userData))
     
     // Then set state
     setToken(userToken)
@@ -175,7 +184,14 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     console.log("[AuthContext] logout() called");
-    sessionStorage.clear()
+    sessionStorage.removeItem('token')
+    sessionStorage.removeItem('refreshToken')
+    sessionStorage.removeItem('role')
+    sessionStorage.removeItem('user')
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('role')
+    localStorage.removeItem('user')
     setToken(null)
     setRole(null)
     setUser(null)

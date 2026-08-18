@@ -12,13 +12,32 @@ import api from "@/lib/api"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
 
+const FileDropzone = ({ id, label, field, accept, required, onChange, fileName, recommended, placeholder = "Upload File", Icon = Upload, subText = "Max file size: 5MB" }) => (
+  <div className="space-y-2">
+    <Label className="text-sm font-medium text-slate-700">
+      {label} {required && <span className="text-red-500">*</span>}
+      {recommended && <span className="text-slate-400 font-normal ml-1">(Optional)</span>}
+    </Label>
+    <Label htmlFor={id} className="border-2 border-dashed border-slate-200 rounded-lg p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-teal-50 hover:border-teal-200 transition-colors group">
+      <input type="file" id={id} className="hidden" onChange={(e) => onChange(e, field)} required={required} accept={accept} />
+      <div className="p-2 bg-slate-100 rounded-full mb-2 group-hover:bg-teal-100 transition-colors">
+        <Icon className="h-5 w-5 text-slate-500 group-hover:text-teal-600" />
+      </div>
+      <span className="text-sm font-medium text-slate-700 truncate w-full px-2">
+        {fileName ? fileName : placeholder}
+      </span>
+      <span className="text-xs text-slate-400 mt-1">{subText}</span>
+    </Label>
+  </div>
+);
+
 function RegisterContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const role = searchParams.get("role") || "patient"
+  const [role, setRole] = useState(searchParams.get("role") || null)
 
   const { token, authLoaded, login } = useAuth()
-  const [step, setStep] = useState(1)
+  const [step, setStep] = useState(role ? 1 : 0)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [verificationStatus, setVerificationStatus] = useState(searchParams.get("status") || "Pending")
   const [error, setError] = useState("")
@@ -28,13 +47,15 @@ function RegisterContent() {
   const [isLoading, setIsLoading] = useState(false)
 
   const [formData, setFormData] = useState({
-    firstName: "", lastName: "", email: "", password: "", phone: "",
+    firstName: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "",
     age: "", sex: "", bloodGroup: "", allergies: "", medications: "", history: "", familyHistory: "", emergencyName: "", emergencyPhone: "",
-    specialization: "", experience: "", license: "", clinic: "", clinicAddress: ""
+    specialization: "", experience: "", license: "", clinic: "", clinicAddress: "",
+    hospitalRegistrationNumber: "", organizationPan: "", hospitalName: "", hospitalContactNumber: "", hospitalMapLink: ""
   })
 
   const [files, setFiles] = useState({
-    governmentId: null, degreeCertificate: null, medicalLicenseProof: null, profilePhoto: null
+    governmentId: null, degreeCertificate: null, medicalLicenseProof: null, profilePhoto: null,
+    hospitalRegistrationCertificate: null, legalEntityProof: null, authorizedRepGovId: null, authorizationProof: null, hospitalAddressProof: null, nabhCertificate: null, gstCertificate: null
   })
 
   const [showCamera, setShowCamera] = useState(false)
@@ -45,6 +66,7 @@ function RegisterContent() {
 
   const isPatient = role === "patient"
   const isDoctor = role === "doctor"
+  const isAdmin = role === "admin" || role === "hospital"
   const currentStatus = searchParams.get("status")
   const isReverifying = isDoctor && !!currentStatus
 
@@ -74,12 +96,6 @@ function RegisterContent() {
     }
   }, [isReverifying, authLoaded])
 
-  // Fix React warning: Move navigation side-effect to useEffect
-  useEffect(() => {
-    if (role === "admin") {
-      router.push("/auth/login?role=admin")
-    }
-  }, [role, router])
 
   // Effect to handle OTP resend timer
   useEffect(() => {
@@ -210,6 +226,12 @@ function RegisterContent() {
   const handleRegister = async (e) => {
     e.preventDefault()
     setError("")
+
+    if (!isReverifying && formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -248,12 +270,38 @@ function RegisterContent() {
 
         if (res.data.success) {
           if (res.data.requireOtp) {
-            setStep(3)
+            setStep(2)
           } else {
             setIsSubmitted(true)
             setVerificationStatus(res.data.verificationStatus || "pending")
             toast.success("Verification request submitted successfully!")
           }
+        }
+      } else if (isAdmin) {
+        const payload = new FormData()
+        payload.append('hospitalName', formData.hospitalName)
+        payload.append('hospitalContactNumber', formData.hospitalContactNumber)
+        payload.append('hospitalMapLink', formData.hospitalMapLink)
+        payload.append('email', formData.email)
+        payload.append('password', formData.password)
+        payload.append('hospitalRegistrationNumber', formData.hospitalRegistrationNumber)
+        payload.append('organizationPan', formData.organizationPan)
+
+        if (files.hospitalRegistrationCertificate) payload.append('hospitalRegistrationCertificate', files.hospitalRegistrationCertificate)
+        if (files.legalEntityProof) payload.append('legalEntityProof', files.legalEntityProof)
+        if (files.authorizedRepGovId) payload.append('authorizedRepGovId', files.authorizedRepGovId)
+        if (files.authorizationProof) payload.append('authorizationProof', files.authorizationProof)
+        if (files.hospitalAddressProof) payload.append('hospitalAddressProof', files.hospitalAddressProof)
+        if (files.nabhCertificate) payload.append('nabhCertificate', files.nabhCertificate)
+        if (files.gstCertificate) payload.append('gstCertificate', files.gstCertificate)
+
+        const res = await api.post('/auth/hospital/register', payload)
+        console.log('Hospital Request Response:', res.data)
+
+        if (res.data.success) {
+          setIsSubmitted(true)
+          setVerificationStatus(res.data.verificationStatus || "pending")
+          toast.success("Hospital registration submitted successfully!")
         }
       } else {
         const payload = new FormData();
@@ -282,7 +330,7 @@ function RegisterContent() {
 
         if (res.data.success) {
           if (res.data.requireOtp) {
-            setStep(3)
+            setStep(2)
           } else {
             console.log('Patient registered, role:', res.data.role)
             login(res.data, res.data.token, res.data.role)
@@ -401,79 +449,206 @@ function RegisterContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 py-12">
-      <div className="max-w-2xl w-full">
-        <div className="text-center mb-8 flex flex-col items-center">
-          <Link href="/" className="flex items-center gap-2 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-600">
-              <Activity className="h-6 w-6 text-white" />
+    <div className="h-screen w-full flex overflow-hidden bg-white font-sans">
+      {/* Left side - Branding/Hero (Hidden on mobile) */}
+      <div className="hidden lg:flex w-1/2 bg-slate-900 relative items-center justify-center overflow-hidden">
+        {/* Background Gradients */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-20">
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-teal-500 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-blue-600 blur-[120px]" />
+        </div>
+        
+        <div className="relative z-10 p-16 flex flex-col items-start max-w-2xl">
+          <Link href="/" className="flex items-center gap-3 mb-12 group">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-teal-400 to-teal-600 shadow-lg shadow-teal-500/30 group-hover:scale-105 transition-transform">
+              <Activity className="h-7 w-7 text-white" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900">MediAI</span>
+            <span className="text-3xl font-extrabold tracking-tight text-white">MediAI</span>
+          </Link>
+          
+          <h1 className="text-5xl font-bold text-white leading-[1.15] tracking-tight mb-6">
+            Join the future of <br />
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-teal-400 to-emerald-300">
+              healthcare.
+            </span>
+          </h1>
+          
+          <p className="text-lg text-slate-300 mb-12 max-w-md leading-relaxed">
+            Create an account to experience AI-powered diagnostics, secure medical records, and seamless consultations.
+          </p>
+        </div>
+      </div>
+
+      {/* Right side - Form */}
+      <div className="w-full lg:w-1/2 h-full flex flex-col relative overflow-y-auto">
+        {/* Mobile Header */}
+        <div className="lg:hidden p-6 pb-0 flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-600">
+              <Activity className="h-5 w-5 text-white" />
+            </div>
+            <span className="text-xl font-bold tracking-tight text-slate-900">MediAI</span>
           </Link>
         </div>
 
-        <Card className="w-full shadow-sm">
-          <CardHeader>
-            <CardTitle>Create an account</CardTitle>
-            <CardDescription>
-              Registering as a <span className="font-semibold text-teal-600 capitalize">{role}</span>.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
-                {error}
+        <div className="flex-1 flex flex-col justify-center p-6 sm:p-12 lg:p-16">
+          <div className="w-full max-w-125 mx-auto">
+            {/* Step 0: Role Selection */}
+            {step === 0 && (
+              <div className="animate-in fade-in slide-in-from-bottom-4">
+                <div className="mb-10 text-center">
+                  <h2 className="text-3xl font-bold text-slate-900 mb-2">Join MediAI</h2>
+                  <p className="text-slate-500">How would you like to use our platform?</p>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-1">
+                  <button
+                    onClick={() => { setRole("patient"); setStep(1); }}
+                    className="flex items-center p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-teal-500 hover:shadow-md transition-all text-left group"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 mb-1">Patient</h3>
+                      <p className="text-sm text-slate-500">Access your health records and consult doctors.</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => { setRole("doctor"); setStep(1); }}
+                    className="flex items-center p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-teal-500 hover:shadow-md transition-all text-left group"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 mb-1">Doctor</h3>
+                      <p className="text-sm text-slate-500">Manage patients and provide consultations.</p>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => { setRole("hospital"); setStep(1); }}
+                    className="flex items-center p-6 bg-white border-2 border-slate-100 rounded-2xl hover:border-teal-500 hover:shadow-md transition-all text-left group"
+                  >
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-teal-600 mb-1">Hospital</h3>
+                      <p className="text-sm text-slate-500">Manage your institution and staff doctors.</p>
+                    </div>
+                  </button>
+                </div>
               </div>
             )}
-            <form onSubmit={step === 3 ? handleVerifyOtp : handleRegister} className="space-y-6">
-              {/* Basic Details - Both Roles */}
+
+            {step > 0 && (
+              <>
+                {/* Header */}
+                <div className="mb-10">
+                  <h2 className="text-3xl font-bold text-slate-900 mb-2">Create an account</h2>
+                  <p className="text-slate-500">
+                    Registering as a <span className="font-semibold text-teal-600 capitalize">{role === 'admin' ? 'hospital' : role}</span>.
+                  </p>
+                </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 text-red-700 text-sm font-medium rounded-xl border border-red-100 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <p>{error}</p>
+              </div>
+            )}
+            <form onSubmit={step === 2 ? handleVerifyOtp : handleRegister} className="space-y-6">
+              {/* All Details - Step 1 */}
               {step === 1 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First name</Label>
-                      <Input id="firstName" value={formData.firstName} onChange={handleChange} required />
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
+                  {/* Basic Details */}
+                  <div className="space-y-4">
+                    <div className="border-b border-slate-100 pb-2">
+                      <h3 className="text-lg font-semibold text-slate-900">{isAdmin ? "Hospital Information" : "Basic Details"}</h3>
+                      <p className="text-xs text-slate-500">{isAdmin ? "Provide your hospital's basic details." : "Let's get to know you."}</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last name</Label>
-                      <Input id="lastName" value={formData.lastName} onChange={handleChange} required />
-                    </div>
-                  </div>
+                    {isAdmin ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="hospitalName">Hospital Name <span className="text-red-500">*</span></Label>
+                          <Input id="hospitalName" value={formData.hospitalName} onChange={handleChange} required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="hospitalContactNumber">Contact Number <span className="text-red-500">*</span></Label>
+                            <Input id="hospitalContactNumber" value={formData.hospitalContactNumber} onChange={handleChange} required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="hospitalMapLink">Google Maps Link</Label>
+                            <Input id="hospitalMapLink" value={formData.hospitalMapLink} onChange={handleChange} placeholder="https://maps.google.com/..." />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First name <span className="text-red-500">*</span></Label>
+                          <Input id="firstName" value={formData.firstName} onChange={handleChange} required />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last name <span className="text-red-500">*</span></Label>
+                          <Input id="lastName" value={formData.lastName} onChange={handleChange} required />
+                        </div>
+                      </div>
+                    )}
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                     <Input id="email" type="email" value={formData.email} onChange={handleChange} required />
                   </div>
                   {!isReverifying && (
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          value={formData.password}
-                          onChange={handleChange}
-                          required
-                          className="pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors"
-                        >
-                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <Input
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
+                        <div className="relative">
+                          <Input
+                            id="confirmPassword"
+                            type={showPassword ? "text" : "password"}
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            required
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-600 transition-colors"
+                          >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}
-                  <Button type="button" className="w-full" onClick={() => setStep(2)}>Continue</Button>
-                </div>
-              )}
+                  </div>
 
-              {/* Patient Specific Details */}
-              {isPatient && step === 2 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
+                  {/* Patient Specific Details */}
+                  {isPatient && (
+                    <div className="space-y-4 pt-4 border-t border-slate-100">
+                      <div className="border-b border-slate-100 pb-2">
+                        <h3 className="text-lg font-semibold text-slate-900">Medical Information</h3>
+                        <p className="text-xs text-slate-500">Provide your basic health details.</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
                       <Label htmlFor="age">Age</Label>
                       <Input id="age" type="number" min="0" max="120" value={formData.age} onChange={handleChange} required />
                     </div>
@@ -580,27 +755,13 @@ function RegisterContent() {
                       )}
                     </div>
                   </div>
+                    </div>
+                  )}
 
-                  <div className="flex gap-4 pt-4 border-t border-slate-100">
-                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? (
-                        <>
-                          <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                          Processing...
-                        </>
-                      ) : (
-                        "Create Account"
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Doctor Specific Details */}
-              {isDoctor && step === 2 && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4">
-                  {/* Professional Details Section */}
+                  {/* Doctor Specific Details */}
+                  {isDoctor && (
+                    <div className="space-y-8 pt-4 border-t border-slate-100">
+                      {/* Professional Details Section */}
                   <div className="space-y-4">
                     <div className="border-b border-slate-100 pb-2">
                       <h3 className="text-lg font-semibold text-slate-900">Professional Details</h3>
@@ -751,20 +912,150 @@ function RegisterContent() {
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-start gap-2">
                     <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
                     <p>
-                      <strong>Important:</strong> Doctors must be verified by admin before accessing consultations. This process typically takes 1-2 business days.
+                      <strong>Important:</strong> Doctors must be verified by Our Team before accessing consultations. This process typically takes 1-2 business days.
                     </p>
                   </div>
 
-                  <div className="flex gap-4 pt-4 border-t border-slate-100">
-                    <Button type="button" variant="outline" className="w-full" onClick={() => setStep(1)} disabled={isLoading}>Back</Button>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                  </div>
+                  )}
+
+                  {/* Admin / Hospital Specific Details */}
+                  {isAdmin && (
+                    <div className="space-y-8 pt-4 border-t border-slate-100">
+                      <div className="space-y-4">
+                        <div className="border-b border-slate-100 pb-2">
+                          <h3 className="text-lg font-semibold text-slate-900">Hospital Details</h3>
+                          <p className="text-xs text-slate-500">Provide your institution's verification details.</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="hospitalRegistrationNumber">Hospital Registration Number <span className="text-red-500">*</span></Label>
+                            <Input id="hospitalRegistrationNumber" value={formData.hospitalRegistrationNumber} onChange={handleChange} required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="organizationPan">Organization PAN <span className="text-red-500">*</span></Label>
+                            <Input id="organizationPan" value={formData.organizationPan} onChange={handleChange} required />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4">
+                          <Label className="text-base font-semibold">Required Verification Documents</Label>
+                          
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <FileDropzone 
+                              id="file-hospital-registration" 
+                              label="Hospital Registration Certificate" 
+                              field="hospitalRegistrationCertificate" 
+                              required 
+                              accept="image/*,.pdf" 
+                              onChange={handleFileChange} 
+                              fileName={files.hospitalRegistrationCertificate?.name} 
+                              placeholder="Upload Certificate"
+                              Icon={FileText}
+                            />
+                            
+                            <FileDropzone 
+                              id="file-legal-entity" 
+                              label="Legal Entity/Organization Proof" 
+                              field="legalEntityProof" 
+                              required 
+                              accept="image/*,.pdf" 
+                              onChange={handleFileChange} 
+                              fileName={files.legalEntityProof?.name} 
+                              placeholder="Upload Proof"
+                              Icon={FileText}
+                            />
+
+                            <FileDropzone 
+                              id="file-auth-gov-id" 
+                              label="Authorized Rep Government ID" 
+                              field="authorizedRepGovId" 
+                              required 
+                              accept="image/*,.pdf" 
+                              onChange={handleFileChange} 
+                              fileName={files.authorizedRepGovId?.name} 
+                              placeholder="Upload ID Proof"
+                              Icon={Upload}
+                            />
+
+                            <FileDropzone 
+                              id="file-auth-proof" 
+                              label="Authorization Proof" 
+                              field="authorizationProof" 
+                              required 
+                              accept="image/*,.pdf" 
+                              onChange={handleFileChange} 
+                              fileName={files.authorizationProof?.name} 
+                              placeholder="Upload Proof"
+                              Icon={FileText}
+                            />
+
+                            <FileDropzone 
+                              id="file-hospital-address" 
+                              label="Hospital Address Proof" 
+                              field="hospitalAddressProof" 
+                              required 
+                              accept="image/*,.pdf" 
+                              onChange={handleFileChange} 
+                              fileName={files.hospitalAddressProof?.name} 
+                              placeholder="Upload Proof"
+                              Icon={FileText}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4 pt-4">
+                          <Label className="text-base font-semibold">Additional Certificates</Label>
+                          
+                          <div className="grid sm:grid-cols-2 gap-4">
+                            <FileDropzone 
+                              id="file-nabh" 
+                              label="NABH Accreditation" 
+                              field="nabhCertificate" 
+                              accept="image/*,.pdf" 
+                              recommended 
+                              onChange={handleFileChange} 
+                              fileName={files.nabhCertificate?.name} 
+                              placeholder="Upload Certificate"
+                              Icon={FileText}
+                            />
+                            
+                            <FileDropzone 
+                              id="file-gst" 
+                              label="GST Certificate" 
+                              field="gstCertificate" 
+                              accept="image/*,.pdf" 
+                              recommended 
+                              onChange={handleFileChange} 
+                              fileName={files.gstCertificate?.name} 
+                              placeholder="Upload Certificate"
+                              Icon={FileText}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+                        <p>
+                          <strong>Important:</strong> Hospitals must be verified by Our Team before gaining access to the platform. This process takes 1-2 business days.
+                        </p>
+                      </div>
+
+                    </div>
+                  )}
+
+                  <div className="flex gap-4 pt-8 border-t border-slate-100 mt-10">
+                    <Button type="button" variant="outline" className="w-1/3 hover:bg-slate-50 transition-colors" onClick={() => { setRole(null); setStep(0); }} disabled={isLoading}>Back</Button>
+                    <Button type="submit" className="w-2/3 bg-linear-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 shadow-md shadow-teal-500/20 hover:shadow-lg hover:shadow-teal-500/30 transition-all font-semibold" disabled={isLoading}>
                       {isLoading ? (
                         <>
                           <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                           Processing...
                         </>
                       ) : (
-                        "Submit Verification Request"
+                        isDoctor || isAdmin ? "Submit Verification Request" : "Create Account"
                       )}
                     </Button>
                   </div>
@@ -772,7 +1063,7 @@ function RegisterContent() {
               )}
 
               {/* OTP Verification Step */}
-              {step === 3 && (
+              {step === 2 && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                   <div className="text-center space-y-2">
                     <div className="mx-auto bg-teal-50 w-12 h-12 rounded-full flex items-center justify-center mb-4">
@@ -811,17 +1102,20 @@ function RegisterContent() {
                   </div>
                 </div>
               )}
-            </form>
-          </CardContent>
-          <CardFooter className="flex justify-center border-t border-slate-100 p-4">
-            <p className="text-sm text-slate-500">
-              Already have an account?{" "}
-              <Link href={`/auth/login?role=${role}`} className="text-teal-600 font-medium hover:underline">
-                Log in
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
+              </form>
+              </>
+            )}
+
+            <div className="mt-8 text-center">
+              <p className="text-sm font-medium text-slate-500">
+                Already have an account?{" "}
+                <Link href={`/auth/login${role ? `?role=${role}` : ''}`} className="text-teal-600 font-semibold hover:text-teal-700 hover:underline transition-colors">
+                  Log in
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
