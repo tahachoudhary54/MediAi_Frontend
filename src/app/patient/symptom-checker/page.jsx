@@ -127,8 +127,11 @@ export default function SymptomChecker() {
   const handleSendMessage = async (content, imageFile) => {
     setError("");
     const lowerContent = content.toLowerCase();
-    const triggerWords = ["i'd like to consult a doctor", "consult doctor", "find doctor", "book appointment"];
-    const hasTriggerWord = triggerWords.some(phrase => lowerContent.includes(phrase));
+    const triggerWords = ["consult", "doctor", "appointment", "find a doctor", "book"];
+    // If they mention consulting or doctors after an assessment is ready
+    const hasTriggerWord = (lowerContent.includes("consult") && lowerContent.includes("doctor")) || 
+                           lowerContent.includes("book appointment") || 
+                           lowerContent.includes("find a doctor");
     if (hasTriggerWord && analysisData?.recommendedSpecialization) {
       handleConsultDoctor(content);
       return;

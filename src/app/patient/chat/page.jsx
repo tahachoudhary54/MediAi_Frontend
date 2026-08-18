@@ -212,6 +212,7 @@ export default function DoctorChat() {
           return [...prev, {
             sender: data.message.senderModel === 'Doctor' ? 'doctor' : 'user',
             content: data.message.content,
+            imageUrl: data.message.imageUrl,
             timestamp: data.message.timestamp,
             _id: data.message._id
           }];
@@ -275,6 +276,7 @@ export default function DoctorChat() {
           const formattedMessages = updatedChat.messages.map(m => ({
             sender: m.senderModel === 'Doctor' ? 'doctor' : 'user',
             content: m.content,
+            imageUrl: m.imageUrl,
             timestamp: m.timestamp,
             _id: m._id
           }))
@@ -317,20 +319,33 @@ export default function DoctorChat() {
     return () => clearInterval(interval)
   }, [consultationEnded, chat, doctorId])
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, imageFile) => {
     if (!chat) return
     try {
-      const res = await api.post(`/chats/${chat._id}/messages`, { content })
+      let imageUrl = null;
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        const uploadRes = await api.post(`/ai/upload-symptom-image`, formData);
+        if (uploadRes.data.success) {
+          imageUrl = uploadRes.data.data.url;
+        } else {
+          throw new Error("Failed to upload image");
+        }
+      }
+
+      const res = await api.post(`/chats/${chat._id}/messages`, { content, imageUrl })
       // Backend returns updated chat
       const formattedMessages = res.data.data.messages.map(m => ({
         sender: m.senderModel === 'Doctor' ? 'doctor' : 'user',
         content: m.content,
+        imageUrl: m.imageUrl,
         timestamp: m.timestamp,
         _id: m._id
       }))
       setMessages(formattedMessages)
     } catch (err) {
-      const errMsg = err.response?.data?.message || "Failed to send message"
+      const errMsg = err.response?.data?.message || err.message || "Failed to send message"
       toast.error(errMsg)
     }
   }

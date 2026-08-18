@@ -32,6 +32,9 @@ export function ChatWindow({
   const inputRef = useRef(null)
   const fileInputRef = useRef(null) // Ref for hidden image file input
 
+  const [selectedImage, setSelectedImage] = useState(null)
+  const [imagePreview, setImagePreview] = useState(null)
+
   // Voice dictation logic
   const toggleListening = () => {
     if (typeof window === 'undefined') return;
@@ -132,9 +135,11 @@ export function ChatWindow({
       } catch (err) { }
       setIsListening(false);
     }
-    if (input.trim()) {
-      onSendMessage(input.trim())
+    if (input.trim() || selectedImage) {
+      onSendMessage(input.trim(), selectedImage)
       setInput("")
+      setSelectedImage(null)
+      setImagePreview(null)
     }
   }
 
@@ -239,6 +244,25 @@ export function ChatWindow({
 
       {/* Input Area */}
       <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+        {imagePreview && (
+          <div className="mb-3 relative inline-block">
+            <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-50 relative">
+              <img src={imagePreview} alt="Preview" className="h-20 w-auto object-contain" />
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedImage(null)
+                  setImagePreview(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ""
+                }}
+                className="absolute top-1 right-1 bg-white/80 hover:bg-red-100 hover:text-red-600 text-slate-600 p-1 rounded-full transition-colors"
+                title="Remove image"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleSend} className="flex items-center gap-2">
           {/* Image upload button */}
           <input
@@ -249,16 +273,15 @@ export function ChatWindow({
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
+              setSelectedImage(file);
               const reader = new FileReader();
               reader.onload = () => {
-                // Send the image as a data URL via onSendMessage if supported
-                // Here we call onSendMessage with empty text; image handling can be added later
-                onSendMessage(reader.result);
+                setImagePreview(reader.result);
               };
               reader.readAsDataURL(file);
             }}
           />
-          <Button type="button" variant="ghost" size="icon" className="text-black shrink-0 bg-green-300 rounded-full" disabled={disabled} onClick={() => fileInputRef.current?.click()} title="Add image">
+          <Button type="button" variant="ghost" size="icon" className="bg-slate-100 text-slate-500 shrink-0 hover:text-teal-600 hover:bg-teal-50 rounded-full" disabled={disabled} onClick={() => fileInputRef.current?.click()} title="Add image">
             <Image className="h-5 w-5" />
           </Button>
 
@@ -270,7 +293,7 @@ export function ChatWindow({
             disabled={disabled}
             className="flex-1 bg-slate-50 border-transparent focus-visible:ring-teal-600 focus-visible:bg-white rounded-full px-4 text-sm py-2 disabled:opacity-60 disabled:cursor-not-allowed"
           />
-          {input.trim() || isListening ? (
+          {input.trim() || isListening || selectedImage ? (
             <div className="flex items-center gap-2">
               {isListening && (
                 <button
@@ -294,7 +317,7 @@ export function ChatWindow({
               type="button"
               variant="ghost"
               size="icon"
-              className="text-slate-400 shrink-0 hover:text-teal-600 hover:bg-teal-50"
+              className="bg-slate-100 text-slate-500 shrink-0 hover:text-teal-600 hover:bg-teal-50 rounded-full"
               disabled={disabled}
               onClick={toggleListening}
               title="Voice typing"

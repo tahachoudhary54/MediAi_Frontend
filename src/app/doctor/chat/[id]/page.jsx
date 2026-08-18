@@ -75,6 +75,7 @@ export default function DoctorChatSession() {
         const formatted = res.data.data.messages.map(m => ({
           sender: m.senderModel === 'Doctor' ? 'user' : 'patient',
           content: m.content,
+          imageUrl: m.imageUrl,
           timestamp: m.timestamp,
           _id: m._id
         }))
@@ -136,6 +137,7 @@ export default function DoctorChatSession() {
           return [...prev, {
             sender: data.message.senderModel === 'Doctor' ? 'user' : 'patient',
             content: data.message.content,
+            imageUrl: data.message.imageUrl,
             timestamp: data.message.timestamp,
             _id: data.message._id
           }];
@@ -193,6 +195,7 @@ export default function DoctorChatSession() {
           const formatted = res.data.data.messages.map(m => ({
             sender: m.senderModel === 'Doctor' ? 'user' : 'patient',
             content: m.content,
+            imageUrl: m.imageUrl,
             timestamp: m.timestamp,
             _id: m._id
           }))
@@ -220,18 +223,32 @@ export default function DoctorChatSession() {
     }
   }, [chat?.status, chatId])
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, imageFile) => {
     try {
-      const res = await api.post(`/chats/${chatId}/messages`, { content })
+      let imageUrl = null;
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        const uploadRes = await api.post(`/ai/upload-symptom-image`, formData);
+        if (uploadRes.data.success) {
+          imageUrl = uploadRes.data.data.url;
+        } else {
+          throw new Error("Failed to upload image");
+        }
+      }
+
+      const res = await api.post(`/chats/${chatId}/messages`, { content, imageUrl })
       const formatted = res.data.data.messages.map(m => ({
         sender: m.senderModel === 'Doctor' ? 'user' : 'patient',
         content: m.content,
+        imageUrl: m.imageUrl,
         timestamp: m.timestamp,
         _id: m._id
       }))
       setMessages(formatted)
     } catch (err) {
-      toast.error("Failed to send message")
+      const errMsg = err.response?.data?.message || err.message || "Failed to send message"
+      toast.error(errMsg)
     }
   }
 
