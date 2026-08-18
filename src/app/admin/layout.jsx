@@ -34,12 +34,10 @@ export default function AdminLayout({ children }) {
     if (isReady && role === 'admin') {
       console.log(`[Socket] Admin socket connecting...`);
       
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const socketUrl = apiBase.replace('/api', '');
+      const socketUrl = api.defaults.baseURL ? api.defaults.baseURL.replace('/api', '') : 'http://localhost:5000';
 
       socket = io(socketUrl, {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
+        withCredentials: true
       });
 
       socket.on("connect", () => {

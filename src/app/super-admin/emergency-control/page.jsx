@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { AlertTriangle, Clock, MapPin, Phone, User, Activity, CheckCircle, Ambulance, XCircle, Shield, RefreshCw, Trash2 } from "lucide-react"
+import { AlertTriangle, Clock, MapPin, Phone, User, Activity, CheckCircle, Ambulance, XCircle, Shield, RefreshCw, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function EmergencyControlCenter() {
   const { token } = useAuth()
@@ -91,6 +92,28 @@ export default function EmergencyControlCenter() {
     }
   }
 
+
+  const filteredEmergencies = emergencies.filter(e => filter === 'all' || e.status === filter)
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 6 // Use 6 for grid layout (2 or 3 cols)
+
+  const totalPages = Math.ceil(filteredEmergencies.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedEmergencies = filteredEmergencies.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1) }
+  const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(p => p - 1) }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filter])
+
+  const pendingCount = emergencies.filter(e => e.status === 'pending').length
+  const assignedCount = emergencies.filter(e => e.status === 'assigned' || e.status === 'dispatched').length
+  const resolvedCount = emergencies.filter(e => e.status === 'resolved').length
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -98,12 +121,6 @@ export default function EmergencyControlCenter() {
       </div>
     )
   }
-
-  const filteredEmergencies = emergencies.filter(e => filter === 'all' || e.status === filter)
-
-  const pendingCount = emergencies.filter(e => e.status === 'pending').length
-  const assignedCount = emergencies.filter(e => e.status === 'assigned' || e.status === 'dispatched').length
-  const resolvedCount = emergencies.filter(e => e.status === 'resolved').length
 
   return (
     <div className="min-h-full">
@@ -197,7 +214,7 @@ export default function EmergencyControlCenter() {
         </div>
       ) : (
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
-          {filteredEmergencies.map(emergency => {
+          {paginatedEmergencies.map(emergency => {
             const isGuest = emergency.source === 'guest';
             const name = isGuest ? emergency.guestName : emergency.patient?.fullName;
             const phone = isGuest ? emergency.guestPhone : emergency.patient?.phone;
@@ -377,6 +394,26 @@ export default function EmergencyControlCenter() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {filteredEmergencies.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 mt-8 bg-white rounded-xl shadow-sm">
+          <div className="text-sm text-slate-500">
+            Showing <span className="font-medium">{filteredEmergencies.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredEmergencies.length)}</span> of <span className="font-medium">{filteredEmergencies.length}</span> entries
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+            </Button>
+            <div className="text-sm font-medium text-slate-700 px-2">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+              Next <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

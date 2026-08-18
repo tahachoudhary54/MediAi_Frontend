@@ -73,7 +73,6 @@ export function Sidebar({ role }) {
     ],
     admin: [
       { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-      { name: "Users", href: "/admin/users", icon: Users },
       { name: "Doctors", href: "/admin/doctors", icon: Stethoscope },
       { name: "Doctor Verification", href: "/admin/doctor-verification", icon: ShieldCheck },
       { name: "Appointments", href: "/admin/appointments", icon: Calendar },
@@ -89,6 +88,7 @@ export function Sidebar({ role }) {
     ],
     super_admin: [
       { name: "Platform Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
+      { name: "Platform Users", href: "/admin/users", icon: Users },
       { name: "Manage Admins", href: "/super-admin/admins", icon: ShieldCheck },
       { name: "Emergency Hub", href: "/super-admin/emergency-control", icon: AlertTriangle, variant: "destructive" },
       { name: "Ambulance Fleet", href: "/super-admin/ambulances", icon: Truck },

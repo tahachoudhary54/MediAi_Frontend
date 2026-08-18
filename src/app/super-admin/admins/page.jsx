@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "react-hot-toast"
-import { Shield, Plus, MoreVertical, Trash2, Edit, AlertCircle, CheckCircle } from "lucide-react"
+import { Shield, Plus, MoreVertical, Trash2, Edit, AlertCircle, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function ManageAdmins() {
   const router = useRouter()
@@ -47,6 +48,17 @@ export default function ManageAdmins() {
   useEffect(() => {
     if (token) fetchAdmins()
   }, [token])
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const totalPages = Math.ceil(admins.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedAdmins = admins.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1) }
+  const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(p => p - 1) }
 
   const handleRowClick = (adminId) => {
     router.push('/super-admin/admins/' + adminId)
@@ -170,7 +182,7 @@ export default function ManageAdmins() {
                   </td>
                 </tr>
               ) : (
-                admins.map((admin) => (
+                paginatedAdmins.map((admin) => (
                   <tr key={admin._id} className="hover:bg-slate-50 cursor-pointer" onClick={() => handleRowClick(admin._id)}>
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -210,6 +222,24 @@ export default function ManageAdmins() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-slate-200 bg-slate-50">
+          <div className="text-sm text-slate-500">
+            Showing <span className="font-medium">{admins.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, admins.length)}</span> of <span className="font-medium">{admins.length}</span> entries
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+            </Button>
+            <div className="text-sm font-medium text-slate-700 px-2">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+              Next <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
       </div>
 

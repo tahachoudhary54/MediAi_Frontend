@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Ambulance, Search, Phone, CreditCard, Car, User, Shield, Sun, Moon, Clock, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Ambulance, Search, Phone, CreditCard, Car, User, Shield, Sun, Moon, Clock, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
@@ -64,6 +65,21 @@ export default function SuperAdminAmbulancesPage() {
     a.driverName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     a.numberPlate.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 6 // Grid layout
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedAmbulances = filtered.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1) }
+  const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(p => p - 1) }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
 
   const stats = {
     total: ambulances.length,
@@ -132,7 +148,7 @@ export default function SuperAdminAmbulancesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filtered.map(amb => {
+          {paginatedAmbulances.map(amb => {
             const statusCfg = STATUS_CONFIG[amb.status] || STATUS_CONFIG.available
             const shiftCfg  = SHIFT_CONFIG[amb.shift || "morning"]
             const ShiftIcon = shiftCfg.icon
@@ -211,6 +227,26 @@ export default function SuperAdminAmbulancesPage() {
               </Card>
             )
           })}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 mt-8 bg-white rounded-xl shadow-sm">
+          <div className="text-sm text-slate-500">
+            Showing <span className="font-medium">{filtered.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> entries
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+              <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+            </Button>
+            <div className="text-sm font-medium text-slate-700 px-2">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+              Next <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
         </div>
       )}
     </div>

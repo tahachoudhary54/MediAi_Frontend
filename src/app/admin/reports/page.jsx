@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Modal } from "@/components/ui/modal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, FileText, Eye, Download, X } from "lucide-react"
+import { Search, FileText, Eye, Download, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 import api from "@/lib/api"
 import jsPDF from "jspdf"
 import { toast } from "react-hot-toast"
@@ -15,6 +15,8 @@ export default function AdminReports() {
   const [reports, setReports] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [selectedReport, setSelectedReport] = useState(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -94,6 +96,27 @@ export default function AdminReports() {
     r.doctor?.fullName?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentReports = filteredReports.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredReports.length / itemsPerPage)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const getPageNumbers = () => {
+    const pages = []
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+        pages.push(i)
+      } else if (pages[pages.length - 1] !== '...') {
+        pages.push('...')
+      }
+    }
+    return pages
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -136,7 +159,7 @@ export default function AdminReports() {
                   <TableCell colSpan={6} className="text-center py-8 text-slate-500">No reports found.</TableCell>
                 </TableRow>
               ) : (
-                filteredReports.map((report) => (
+                currentReports.map((report) => (
                   <TableRow key={report._id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -168,6 +191,55 @@ export default function AdminReports() {
             </TableBody>
           </Table>
         </CardContent>
+        {filteredReports.length > 0 && (
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 p-4 gap-4">
+            <div className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-900">{indexOfFirstItem + 1}</span> to <span className="font-medium text-slate-900">{Math.min(indexOfLastItem, filteredReports.length)}</span> of <span className="font-medium text-slate-900">{filteredReports.length}</span> entries
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-8 gap-1 pl-2.5"
+              >
+                <ChevronLeft className="h-4 w-4 text-slate-500" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+              
+              <div className="flex items-center gap-1 hidden md:flex">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-8 min-w-[2rem] px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-8 gap-1 pr-2.5"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4 text-slate-500" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
 
       <Modal isOpen={isViewModalOpen} onClose={() => setIsViewModalOpen(false)} title="View Medical Report">

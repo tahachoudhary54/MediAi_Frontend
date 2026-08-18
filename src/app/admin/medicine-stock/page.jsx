@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Modal } from "@/components/ui/modal"
-import { Search, Plus, Pencil, Trash2, BriefcaseMedical, Activity, AlertTriangle, IndianRupee } from "lucide-react"
+import { Search, Plus, Pencil, Trash2, BriefcaseMedical, Activity, AlertTriangle, IndianRupee, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
@@ -161,6 +161,21 @@ export default function AdminMedicineStockPage() {
     m.genericName?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+
+  const totalPages = Math.ceil(filtered.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedMedicines = filtered.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1) }
+  const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(p => p - 1) }
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
   const stats = {
     total: medicines.length,
     lowStock: medicines.filter(m => m.quantity <= m.lowStockThreshold).length,
@@ -249,7 +264,7 @@ export default function AdminMedicineStockPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filtered.map(med => (
+                  paginatedMedicines.map(med => (
                     <TableRow key={med._id} className="hover:bg-slate-50/50">
                       <TableCell>
                         <div className="font-semibold text-slate-900">{med.name}</div>
@@ -301,6 +316,24 @@ export default function AdminMedicineStockPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
+            <div className="text-sm text-slate-500">
+              Showing <span className="font-medium">{filtered.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, filtered.length)}</span> of <span className="font-medium">{filtered.length}</span> entries
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+              </Button>
+              <div className="text-sm font-medium text-slate-700 px-2">
+                Page {currentPage} of {totalPages || 1}
+              </div>
+              <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+                Next <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

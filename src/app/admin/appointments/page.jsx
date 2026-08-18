@@ -1,13 +1,13 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input, Label } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Modal } from "@/components/ui/modal"
-import { Search, Edit2, Trash2, Filter, Calendar } from "lucide-react"
+import { Search, Edit2, Trash2, Filter, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 
 export default function AdminAppointments() {
@@ -15,6 +15,8 @@ export default function AdminAppointments() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -108,6 +110,27 @@ export default function AdminAppointments() {
     }
   }
 
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredAppointments.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredAppointments.length / itemsPerPage)
+
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i)
+    } else {
+      if (currentPage <= 3) {
+        pageNumbers.push(1, 2, 3, 4, '...', totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        pageNumbers.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+      }
+    }
+    return pageNumbers
+  }
+
   const getStatusBadgeVariant = (status) => {
     switch (status.toLowerCase()) {
       case "confirmed": return "teal";
@@ -137,7 +160,10 @@ export default function AdminAppointments() {
                 placeholder="Search by doctor or patient..."
                 className="pl-9"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -145,7 +171,10 @@ export default function AdminAppointments() {
               <select
                 className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
                 <option value="All">All Statuses</option>
                 <option value="Confirmed">Confirmed</option>
@@ -172,17 +201,17 @@ export default function AdminAppointments() {
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
                 </TableRow>
-              ) : filteredAppointments.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                     No appointments found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAppointments.map(appt => (
+                currentItems.map(appt => (
                   <TableRow key={appt._id}>
-                    <TableCell className="font-medium text-slate-900">{appt.patient?.fullName}</TableCell>
-                    <TableCell>{appt.doctor?.fullName}</TableCell>
+                    <TableCell className="font-medium text-slate-900">{appt.patient?.fullName || "N/A"}</TableCell>
+                    <TableCell>{appt.doctor?.fullName || "N/A"}</TableCell>
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium">{new Date(appt.date).toLocaleDateString()}</span>
@@ -209,6 +238,55 @@ export default function AdminAppointments() {
             </TableBody>
           </Table>
         </CardContent>
+        {filteredAppointments.length > 0 && (
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 p-4 gap-4">
+            <div className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-900">{indexOfFirstItem + 1}</span> to <span className="font-medium text-slate-900">{Math.min(indexOfLastItem, filteredAppointments.length)}</span> of <span className="font-medium text-slate-900">{filteredAppointments.length}</span> entries
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-8 gap-1 pl-2.5"
+              >
+                <ChevronLeft className="h-4 w-4 text-slate-500" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+              
+              <div className="flex items-center gap-1 hidden md:flex">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-8 min-w-[2rem] px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-8 gap-1 pr-2.5"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4 text-slate-500" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
 
       {/* Edit Modal */}
@@ -256,7 +334,7 @@ export default function AdminAppointments() {
       {/* Delete/Cancel Confirmation Modal */}
       <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Cancel Appointment">
         <div className="space-y-4">
-          <p className="text-slate-600">Are you sure you want to cancel/delete the appointment for <span className="font-semibold text-slate-900">{selectedAppointment?.patient?.fullName}</span> with <span className="font-semibold text-slate-900">Dr. {selectedAppointment?.doctor?.fullName}</span>? This action will notify the patient if cancelled.</p>
+          <p className="text-slate-600">Are you sure you want to cancel/delete the appointment for <span className="font-semibold text-slate-900">{selectedAppointment?.patient?.fullName || "Unknown Patient"}</span> with <span className="font-semibold text-slate-900">Dr. {selectedAppointment?.doctor?.fullName || "Unknown"}</span>? This action will notify the patient if cancelled.</p>
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Keep Appointment</Button>
             <Button variant="danger" className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDeleteAppointment}>Cancel/Delete Appointment</Button>

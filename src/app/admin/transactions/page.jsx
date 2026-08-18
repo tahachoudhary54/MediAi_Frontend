@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Filter, FileSpreadsheet, DollarSign, Clock, CheckCircle2, XCircle, ArrowUpRight, ArrowDownRight, Trash2 } from "lucide-react"
+import { Search, Filter, FileSpreadsheet, DollarSign, Clock, CheckCircle2, XCircle, ArrowUpRight, ArrowDownRight, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -15,6 +15,8 @@ export default function AdminTransactions() {
   const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this transaction?")) return
@@ -65,6 +67,27 @@ export default function AdminTransactions() {
     pending: transactions.filter(t => t.status === 'pending').length,
     completed: transactions.filter(t => t.status === 'completed').length,
     failed: transactions.filter(t => t.status === 'failed').length
+  }
+
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentItems = filteredTransactions.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage)
+
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i)
+    } else {
+      if (currentPage <= 3) {
+        pageNumbers.push(1, 2, 3, 4, '...', totalPages)
+      } else if (currentPage >= totalPages - 2) {
+        pageNumbers.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages)
+      } else {
+        pageNumbers.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages)
+      }
+    }
+    return pageNumbers
   }
 
   const getStatusBadge = (status) => {
@@ -145,7 +168,10 @@ export default function AdminTransactions() {
                 placeholder="Search by patient or doctor..."
                 className="pl-9 bg-white text-slate-900"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
               />
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -153,7 +179,10 @@ export default function AdminTransactions() {
               <select
                 className="flex h-10 w-full sm:w-40 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600"
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
                 <option value="All">All Statuses</option>
                 <option value="Completed">Completed</option>
@@ -185,7 +214,7 @@ export default function AdminTransactions() {
                       Loading transactions...
                     </TableCell>
                   </TableRow>
-                ) : filteredTransactions.length === 0 ? (
+                ) : currentItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center py-20">
                       <div className="flex flex-col items-center">
@@ -196,7 +225,7 @@ export default function AdminTransactions() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredTransactions.map((t) => (
+                  currentItems.map((t) => (
                     <TableRow key={t._id}>
                       <TableCell className="font-mono text-xs text-slate-500">{t._id.substring(0, 10)}...</TableCell>
                       <TableCell>
@@ -241,6 +270,55 @@ export default function AdminTransactions() {
             </Table>
           </div>
         </CardContent>
+        {filteredTransactions.length > 0 && (
+          <CardFooter className="flex flex-col sm:flex-row items-center justify-between border-t border-slate-100 p-4 gap-4">
+            <div className="text-sm text-slate-500">
+              Showing <span className="font-medium text-slate-900">{indexOfFirstItem + 1}</span> to <span className="font-medium text-slate-900">{Math.min(indexOfLastItem, filteredTransactions.length)}</span> of <span className="font-medium text-slate-900">{filteredTransactions.length}</span> entries
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-8 gap-1 pl-2.5"
+              >
+                <ChevronLeft className="h-4 w-4 text-slate-500" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+              
+              <div className="flex items-center gap-1 hidden md:flex">
+                {getPageNumbers().map((page, index) => (
+                  page === '...' ? (
+                    <span key={`ellipsis-${index}`} className="px-2 text-slate-400">...</span>
+                  ) : (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className={`h-8 min-w-[2rem] px-2 ${currentPage === page ? "bg-teal-600 text-white hover:bg-teal-700" : "text-slate-600"}`}
+                    >
+                      {page}
+                    </Button>
+                  )
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-8 gap-1 pr-2.5"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4 text-slate-500" />
+              </Button>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </div>
   )

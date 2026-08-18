@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { AlertTriangle, MapPin, Phone, Activity, Clock, Shield, Search, Truck, Check, Archive } from "lucide-react"
+import { AlertTriangle, MapPin, Phone, Activity, Clock, Shield, Search, Truck, Archive, Check, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 import { io } from "socket.io-client"
@@ -16,12 +16,6 @@ export default function EmergencyMonitoring() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("Active")
   const [riskFilter, setRiskFilter] = useState("All")
-  const [checkedItems, setCheckedItems] = useState({})
-
-  const toggleCheck = (idx) => {
-    setCheckedItems(prev => ({ ...prev, [idx]: !prev[idx] }))
-  }
-
   const fetchEmergencies = async () => {
     try {
       const res = await api.get('/admin/emergencies')
@@ -103,12 +97,12 @@ export default function EmergencyMonitoring() {
     try {
       const res = await api.patch(`/admin/emergencies/${id}/archive`)
       if (res.data.success) {
-        toast.success("Emergency case archived")
+        toast.success("Emergency removed from dashboard")
         fetchEmergencies()
       }
     } catch (err) {
       console.error("Failed to archive:", err)
-      toast.error("Failed to archive case")
+      toast.error("Failed to remove case")
     }
   }
 
@@ -125,7 +119,7 @@ export default function EmergencyMonitoring() {
       } else if (statusFilter === "Resolved") {
         matchesStatus = item.status === 'resolved' && !item.isArchived;
       } else if (statusFilter === "All") {
-        matchesStatus = true;
+        matchesStatus = !item.isArchived;
       }
 
       const matchesRisk = riskFilter === "All" || item.riskLevel === riskFilter
@@ -222,7 +216,7 @@ export default function EmergencyMonitoring() {
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Total Cases</p>
-              <p className="text-3xl font-bold text-slate-900">{emergencies.length}</p>
+              <p className="text-3xl font-bold text-slate-900">{emergencies.filter(e => !e.isArchived).length}</p>
             </div>
           </CardContent>
         </Card>
@@ -267,124 +261,147 @@ export default function EmergencyMonitoring() {
         </CardContent>
       </Card>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
-
-        {/* Emergency Cards - 2/3 width */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* Main Content */}
+      <div className="space-y-4">
           {filteredEmergencies.length > 0 ? (
             filteredEmergencies.map((emergency) => (
-              <Card key={emergency._id} className="border-red-200 shadow-sm overflow-hidden relative">
-                <div className={`absolute top-0 left-0 w-1.5 h-full ${emergency.riskLevel === 'Critical' ? 'bg-red-600' : 'bg-red-400'}`}></div>
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        {getRiskBadge(emergency.riskLevel)}
-                        {getStatusBadge(emergency.status)}
-                        <span className="text-xs text-slate-500 flex items-center gap-1 ml-auto">
-                          <Clock className="h-3 w-3" /> {new Date(emergency.createdAt).toLocaleString()}
+              <Card key={emergency._id} className="relative overflow-hidden border-slate-200 transition-all hover:shadow-md">
+                <div className={`h-1.5 w-full ${emergency.riskLevel === 'Critical' ? 'bg-red-500' : 'bg-red-400'}`}></div>
+                <CardContent className="p-0">
+                  <div className="flex flex-col md:flex-row">
+                    
+                    {/* Main Info Area */}
+                    <div className="flex-1 p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                           {getRiskBadge(emergency.riskLevel)}
+                           {getStatusBadge(emergency.status)}
+                        </div>
+                        <span className="text-sm text-slate-500 flex items-center gap-1.5 font-medium">
+                           <Clock className="h-4 w-4" /> {new Date(emergency.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <h3 className="text-xl font-bold text-slate-900">{emergency.patient?.fullName || "Anonymous Patient"}</h3>
+                      
+                      <h3 className="text-2xl font-bold text-slate-900 tracking-tight mb-4">{emergency.patient?.fullName || "Anonymous Patient"}</h3>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Symptoms</p>
-                          <p className="text-sm text-slate-700 font-medium">{emergency.symptoms}</p>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Location</p>
-                          {emergency.latitude && emergency.longitude ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${emergency.latitude},${emergency.longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline transition-colors w-fit"
-                            >
-                              <MapPin className="h-4 w-4 text-red-500" />
-                              {`${emergency.latitude.toFixed(4)}, ${emergency.longitude.toFixed(4)}`}
-                              {emergency.accuracy ? ` (±${Math.round(emergency.accuracy)}m)` : ''}
-                            </a>
-                          ) : (
-                            <p className="flex items-center gap-1.5 text-sm text-slate-500 font-medium">
-                              <MapPin className="h-4 w-4 text-slate-400" />
-                              Unavailable
-                            </p>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Contact</p>
-                          <p className="text-sm text-slate-700 font-medium">{emergency.patient?.phone || "N/A"}</p>
-                          {emergency.patient?.emergencyContact?.phone && (
-                            <div className="mt-2 pt-2 border-t border-slate-100">
-                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Emergency Contact</p>
-                              <p className="text-sm text-slate-700 font-medium">{emergency.patient.emergencyContact.phone}</p>
-                              {emergency.patient.emergencyContact.name && (
-                                <p className="text-[10px] text-slate-500 font-medium">{emergency.patient.emergencyContact.name} ({emergency.patient.emergencyContact.relation || 'Unknown'})</p>
-                              )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                         {/* Section 1: Medical Info */}
+                         <div>
+                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                             <Activity className="h-4 w-4" /> Symptoms
+                           </h4>
+                           <p className="text-slate-800 font-medium text-sm leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                             {emergency.symptoms}
+                           </p>
+                         </div>
+                         
+                         {/* Section 2: Location Info */}
+                         <div>
+                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                             <MapPin className="h-4 w-4" /> Location
+                           </h4>
+                           <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                             {emergency.latitude && emergency.longitude ? (
+                               <a
+                                  href={`https://www.google.com/maps?q=${emergency.latitude},${emergency.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-semibold hover:underline"
+                               >
+                                  <div className="p-1.5 bg-blue-100 rounded-md"><MapPin className="h-4 w-4 text-blue-600" /></div>
+                                  <span>{`${emergency.latitude.toFixed(4)}, ${emergency.longitude.toFixed(4)}`}</span>
+                               </a>
+                             ) : (
+                               <span className="text-sm text-slate-500 font-medium">Unavailable</span>
+                             )}
+                           </div>
+                         </div>
+                         
+                         {/* Section 3: Contact Info */}
+                         <div className="md:col-span-2">
+                            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                               <Phone className="h-4 w-4" /> Contacts
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                               <div>
+                                  <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Patient Phone</p>
+                                  <p className="text-sm font-semibold text-slate-900">{emergency.patient?.phone || "N/A"}</p>
+                               </div>
+                               {emergency.patient?.emergencyContact?.phone && (
+                                 <div>
+                                    <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Emergency Contact</p>
+                                    <p className="text-sm font-semibold text-slate-900">{emergency.patient.emergencyContact.phone}</p>
+                                    {emergency.patient.emergencyContact.name && (
+                                      <p className="text-xs text-slate-500 mt-0.5">{emergency.patient.emergencyContact.name} ({emergency.patient.emergencyContact.relation || 'Unknown'})</p>
+                                    )}
+                                 </div>
+                               )}
                             </div>
-                          )}
-                        </div>
+                         </div>
                       </div>
 
                       {emergency.nearestDoctors?.length > 0 && (
-                        <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-2">Nearest Doctors</p>
+                        <div className="mt-4">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Nearest Doctors</p>
                           <div className="flex flex-wrap gap-2">
                             {emergency.nearestDoctors.map((doc, idx) => (
-                              <Badge key={idx} variant="outline" className="bg-white text-xs py-0.5">
-                                {doc.doctor?.fullName || "Doctor"} ({doc.distance?.toFixed(1)} km)
-                              </Badge>
+                              <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-full shadow-sm">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                <span className="text-sm font-medium text-slate-700">{doc.doctor?.fullName || "Doctor"}</span>
+                                <span className="text-xs text-slate-500">({doc.distance?.toFixed(1)} km)</span>
+                              </div>
                             ))}
                           </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-slate-100 pt-5 md:pt-0 md:pl-6 min-w-[180px]">
-                      {emergency.status === 'pending' && (
-                        <Button
-                          onClick={() => handleUpdateStatus(emergency._id, 'assigned')}
-                          className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                        >
-                          Mark Dispatched
-                        </Button>
-                      )}
-                      {emergency.status !== 'resolved' && (
-                        <Button
-                          onClick={() => handleUpdateStatus(emergency._id, 'resolved')}
-                          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
-                        >
-                          Mark Resolved
-                        </Button>
-                      )}
-                      {emergency.status === 'resolved' && !emergency.isArchived && (
-                        <Button
-                          variant="outline"
-                          onClick={() => handleArchive(emergency._id)}
-                          className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 shadow-sm"
-                        >
-                          <Archive className="h-4 w-4" />
-                          Archive Case
-                        </Button>
-                      )}
-                      <a
-                        href={`tel:${emergency.patient?.phone || ''}`}
-                        className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 w-full border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"
-                      >
-                        <Phone className="h-4 w-4 mr-2 text-slate-500" />
-                        Call Patient
-                      </a>
-                      <Button
-                        variant="outline"
-                        onClick={() => toast.success("🚑 Ambulance dispatched! ETA: 5 mins")}
-                        className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50 shadow-sm"
-                      >
-                        <Truck className="h-4 w-4" />
-                        Dispatch Ambulance
-                      </Button>
+                    {/* Action Area */}
+                    <div className="w-full md:w-72 bg-slate-50/80 border-t md:border-t-0 md:border-l border-slate-200 p-5 flex flex-col justify-center gap-2.5">
+                       {emergency.status === 'pending' && (
+                         <Button
+                           onClick={() => handleUpdateStatus(emergency._id, 'assigned')}
+                           className="w-full h-10 gap-2 bg-slate-900 hover:bg-slate-800 text-white shadow-sm font-semibold"
+                         >
+                           <Shield className="h-4 w-4" /> Mark Dispatched
+                         </Button>
+                       )}
+                       {emergency.status !== 'resolved' && (
+                         <Button
+                           onClick={() => handleUpdateStatus(emergency._id, 'resolved')}
+                           className="w-full h-10 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm font-semibold"
+                         >
+                           <Check className="h-4 w-4" /> Mark Resolved
+                         </Button>
+                       )}
+                       {emergency.status === 'resolved' && !emergency.isArchived && (
+                         <Button
+                           variant="outline"
+                           onClick={() => handleArchive(emergency._id)}
+                           className="w-full h-10 gap-2 border-red-200 text-red-600 hover:bg-red-50 font-semibold shadow-sm"
+                         >
+                           <Trash2 className="h-4 w-4" /> Remove from Dashboard
+                         </Button>
+                       )}
+                       
+                       <div className="h-px bg-slate-200 my-1 w-full"></div>
+                       
+                       <a
+                         href={`tel:${emergency.patient?.phone || ''}`}
+                         className="inline-flex items-center justify-center rounded-md text-sm font-semibold transition-colors h-10 px-4 py-2 w-full border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 shadow-sm"
+                       >
+                         <Phone className="h-4 w-4 mr-2 text-slate-500" />
+                         Call Patient
+                       </a>
+                       <Button
+                         variant="outline"
+                         onClick={() => toast.success("🚑 Ambulance dispatched! ETA: 5 mins")}
+                         className="w-full h-10 gap-2 border-red-200 text-red-600 hover:bg-red-50 font-semibold shadow-sm"
+                       >
+                         <Truck className="h-4 w-4" /> Dispatch Ambulance
+                       </Button>
                     </div>
+
                   </div>
                 </CardContent>
               </Card>
@@ -398,78 +415,6 @@ export default function EmergencyMonitoring() {
               <p className="text-slate-500">Try adjusting your filters or search query.</p>
             </div>
           )}
-        </div>
-
-        {/* Right Sidebar - 1/3 width */}
-        <div className="space-y-6">
-
-          {/* Risk Distribution */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-4 w-4 text-teal-600" />
-                Risk Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              {['Critical', 'High', 'Medium', 'Low'].map(level => {
-                const count = emergencies.filter(e => e.riskLevel === level).length
-                const total = emergencies.length || 1
-                const percent = (count / total) * 100
-                return (
-                  <div key={level} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium text-slate-700">{level}</span>
-                      <span className="text-slate-500 font-semibold">{count}</span>
-                    </div>
-                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${level === 'Critical' ? 'bg-red-600' : level === 'High' ? 'bg-red-400' : level === 'Medium' ? 'bg-amber-400' : 'bg-emerald-400'}`}
-                        style={{ width: `${percent}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                )
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Response Checklist */}
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="border-b border-slate-50 bg-slate-50/30 pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Activity className="h-4 w-4 text-teal-600" />
-                Response Checklist
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-1">
-              {[
-                "Confirm patient location",
-                "Assess risk and symptoms",
-                "Assign nearest doctor/EMS",
-                "Notify emergency contacts",
-                "Follow up until resolved"
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-2.5 text-sm text-slate-600 cursor-pointer hover:bg-slate-50 rounded-md transition-colors"
-                  onClick={() => toggleCheck(i)}
-                >
-                  <div className={`h-4 w-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${checkedItems[i] ? 'bg-teal-600 border-teal-600' : 'border-slate-300'}`}>
-                    {checkedItems[i] && <Check className="h-3 w-3 text-white" />}
-                  </div>
-                  <span className={checkedItems[i] ? 'line-through text-slate-400' : ''}>{item}</span>
-                </div>
-              ))}
-              {Object.values(checkedItems).filter(Boolean).length === 5 && (
-                <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
-                  <p className="text-sm font-semibold text-emerald-700">✓ All steps completed!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-        </div>
       </div>
     </div>
   )

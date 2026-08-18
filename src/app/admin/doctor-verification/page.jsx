@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, CheckCircle2, XCircle, MapPin } from "lucide-react"
+import { FileText, CheckCircle2, XCircle, MapPin, ChevronLeft, ChevronRight } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "react-hot-toast"
 
@@ -31,6 +31,17 @@ export default function DoctorVerification() {
     const interval = setInterval(fetchPendingDoctors, 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5 // Less items per page because the cards are large
+
+  const totalPages = Math.ceil(pendingDoctors.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedDoctors = pendingDoctors.slice(startIndex, startIndex + itemsPerPage)
+
+  const handleNextPage = () => { if (currentPage < totalPages) setCurrentPage(p => p + 1) }
+  const handlePrevPage = () => { if (currentPage > 1) setCurrentPage(p => p - 1) }
 
   const handleVerify = async (doctorId, status) => {
     try {
@@ -87,8 +98,9 @@ export default function DoctorVerification() {
         ) : pendingDoctors.length === 0 ? (
           <p className="text-slate-500">No pending doctors to verify.</p>
         ) : (
-          pendingDoctors.map(doc => (
-            <Card key={doc._id}>
+          <div className="space-y-4">
+            {paginatedDoctors.map(doc => (
+              <Card key={doc._id}>
               <CardContent className="p-6">
                 <div className="flex flex-col lg:flex-row gap-6">
 
@@ -155,7 +167,28 @@ export default function DoctorVerification() {
                 </div>
               </CardContent>
             </Card>
-          ))
+            ))}
+            
+            {/* Pagination Controls */}
+            {pendingDoctors.length > 0 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 mt-4">
+                <div className="text-sm text-slate-500">
+                  Showing <span className="font-medium">{pendingDoctors.length === 0 ? 0 : startIndex + 1}</span> to <span className="font-medium">{Math.min(startIndex + itemsPerPage, pendingDoctors.length)}</span> of <span className="font-medium">{pendingDoctors.length}</span> entries
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
+                    <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                  </Button>
+                  <div className="text-sm font-medium text-slate-700 px-2">
+                    Page {currentPage} of {totalPages || 1}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages || totalPages === 0}>
+                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
