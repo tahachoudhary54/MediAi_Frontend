@@ -145,7 +145,11 @@ export default function SymptomChecker() {
       const formData = new FormData();
       formData.append('image', imageFile);
       try {
-        const uploadRes = await api.post(`/ai/upload-symptom-image`, formData);
+        const uploadRes = await api.post(`/ai/upload-symptom-image`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
         if (uploadRes.data.success) {
           imageUrl = uploadRes.data.data.url;
         } else {
