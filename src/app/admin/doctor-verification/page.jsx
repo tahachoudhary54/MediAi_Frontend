@@ -12,9 +12,9 @@ export default function DoctorVerification() {
   const [pendingDoctors, setPendingDoctors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const fetchPendingDoctors = async () => {
+  const fetchPendingDoctors = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/admin/doctors/pending')
       if (res.data.success) {
         setPendingDoctors(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -22,13 +22,13 @@ export default function DoctorVerification() {
     } catch (err) {
       console.error("Failed to fetch pending doctors:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchPendingDoctors()
-    const interval = setInterval(fetchPendingDoctors, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchPendingDoctors(true), 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
 

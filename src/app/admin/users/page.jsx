@@ -31,9 +31,9 @@ export default function AdminUsers() {
   const [isLoading, setIsLoading] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/admin/users')
       if (res.data.success) {
         setUsers(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -42,13 +42,13 @@ export default function AdminUsers() {
       console.error("Failed to fetch users:", error)
       toast.error(typeof error === 'string' ? error : "Failed to load user list")
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchUsers()
-    const interval = setInterval(fetchUsers, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchUsers(true), 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
 

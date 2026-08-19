@@ -14,9 +14,9 @@ export default function HealthReports() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedReport, setSelectedReport] = useState(null)
 
-  const fetchReports = async () => {
+  const fetchReports = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/reports/patient')
       if (res.data.success) {
         setReports(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -24,13 +24,13 @@ export default function HealthReports() {
     } catch (err) {
       console.error("Failed to fetch reports:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchReports()
-    const interval = setInterval(fetchReports, 15000) // Poll every 15s
+    const interval = setInterval(() => fetchReports(true), 15000) // Poll every 15s
     return () => clearInterval(interval)
   }, [])
 

@@ -29,9 +29,9 @@ export default function AdminDoctors() {
     fullName: "", email: "", phone: "", specialization: "", licenseNumber: "", yearsOfExperience: "", hospitalName: "", clinicAddress: "", verificationStatus: "pending", accountStatus: "active"
   })
 
-  const fetchDoctors = async () => {
+  const fetchDoctors = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/admin/doctors')
       if (res.data.success) {
         setDoctors(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -40,13 +40,13 @@ export default function AdminDoctors() {
       console.error("Failed to fetch doctors:", err)
       toast.error(typeof err === 'string' ? err : "Failed to load doctor data")
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchDoctors()
-    const interval = setInterval(fetchDoctors, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchDoctors(true), 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
 

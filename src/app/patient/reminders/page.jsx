@@ -22,9 +22,9 @@ export default function MedicineReminders() {
     instructions: ""
   })
 
-  const fetchReminders = async () => {
+  const fetchReminders = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/medicines/patient')
       if (res.data.success) {
         setReminders(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -32,7 +32,7 @@ export default function MedicineReminders() {
     } catch (err) {
       console.error("Failed to fetch medicine reminders:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
@@ -40,7 +40,7 @@ export default function MedicineReminders() {
 
   useEffect(() => {
     fetchReminders()
-    const interval = setInterval(fetchReminders, 30000) // Poll every 30s
+    const interval = setInterval(() => fetchReminders(true), 30000) // Poll every 30s
     return () => clearInterval(interval)
   }, [])
 

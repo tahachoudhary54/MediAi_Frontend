@@ -89,7 +89,7 @@ export default function AppointmentsPage() {
     return `${availabilityString}${timeRange}`;
   };
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (isPolling = false) => {
     const token = sessionStorage.getItem('token');
     const role = sessionStorage.getItem('role');
 
@@ -103,7 +103,7 @@ export default function AppointmentsPage() {
       return;
     }
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       setError("")
       const res = await api.get('/appointments/patient')
       if (res.data.success) {
@@ -114,7 +114,7 @@ export default function AppointmentsPage() {
       const errorMsg = err.response?.data?.message || err.message || "Failed to load appointments."
       setError(errorMsg)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
@@ -139,7 +139,7 @@ export default function AppointmentsPage() {
     }
     window.addEventListener("appointmentCancelled", handleCancelledEvent)
 
-    const interval = setInterval(fetchAppointments, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchAppointments(true), 10000) // Poll every 10s
     return () => {
       clearInterval(interval)
       window.removeEventListener("appointmentCancelled", handleCancelledEvent)

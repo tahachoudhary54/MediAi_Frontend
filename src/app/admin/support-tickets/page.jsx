@@ -24,9 +24,9 @@ export default function AdminSupportTickets() {
   const [replyText, setReplyText] = useState("")
   const [ticketStatus, setTicketStatus] = useState("")
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (isPolling = false) => {
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       const res = await api.get('/admin/support-tickets')
       if (res.data.success) {
         setTickets(res.data.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
@@ -34,13 +34,13 @@ export default function AdminSupportTickets() {
     } catch (err) {
       console.error("Failed to fetch admin support tickets:", err)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchTickets()
-    const interval = setInterval(fetchTickets, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchTickets(true), 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
 

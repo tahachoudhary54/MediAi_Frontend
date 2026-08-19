@@ -18,7 +18,7 @@ export default function DoctorAppointments() {
   const [selectedAppointment, setSelectedAppointment] = useState(null)
   const [rescheduleData, setRescheduleData] = useState({ date: "", time: "" })
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (isPolling = false) => {
     const token = sessionStorage.getItem('token');
     const role = sessionStorage.getItem('role');
 
@@ -32,7 +32,7 @@ export default function DoctorAppointments() {
       return;
     }
     try {
-      setIsLoading(true)
+      if (!isPolling) setIsLoading(true)
       setError("")
       const res = await api.get('/appointments/doctor')
       if (res.data.success) {
@@ -43,13 +43,13 @@ export default function DoctorAppointments() {
       const errorMsg = err.response?.data?.message || err.message || "Failed to load appointments."
       setError(errorMsg)
     } finally {
-      setIsLoading(false)
+      if (!isPolling) setIsLoading(false)
     }
   }
 
   useEffect(() => {
     fetchAppointments()
-    const interval = setInterval(fetchAppointments, 10000) // Poll every 10s
+    const interval = setInterval(() => fetchAppointments(true), 10000) // Poll every 10s
     return () => clearInterval(interval)
   }, [])
 
