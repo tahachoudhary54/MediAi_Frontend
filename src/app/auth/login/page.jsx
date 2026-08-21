@@ -64,15 +64,14 @@ function LoginContent() {
     try {
       const payload = {
         email,
-        otp,
-        role: "doctor"
+        otp
       }
 
       const res = await api.post('/auth/verify-otp', payload)
 
       if (res.data.success) {
         // After verifying OTP, auto-login with credentials to get token
-        const loginPayload = { email, password, role: "doctor" }
+        const loginPayload = { email, password }
         const loginRes = await api.post('/auth/login', loginPayload)
         if (loginRes.data.success) {
           login(loginRes.data, loginRes.data.token, loginRes.data.role, rememberMe)

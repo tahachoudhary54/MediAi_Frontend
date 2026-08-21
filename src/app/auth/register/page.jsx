@@ -309,12 +309,12 @@ function RegisterContent() {
         payload.append('email', formData.email);
         payload.append('password', formData.password);
         payload.append('age', formData.age);
-        payload.append('sex', (formData.sex || "").toLowerCase());
-        payload.append('bloodGroup', formData.bloodGroup);
-        payload.append('allergies', formData.allergies);
-        payload.append('currentMedications', formData.medications);
-        payload.append('previousDiseaseHistory', formData.history);
-        payload.append('familyDiseaseHistory', formData.familyHistory);
+        if (formData.sex) payload.append('sex', formData.sex.toLowerCase());
+        if (formData.bloodGroup) payload.append('bloodGroup', formData.bloodGroup);
+        if (formData.allergies) payload.append('allergies', formData.allergies);
+        if (formData.medications) payload.append('currentMedications', formData.medications);
+        if (formData.history) payload.append('previousDiseaseHistory', formData.history);
+        if (formData.familyHistory) payload.append('familyDiseaseHistory', formData.familyHistory);
         payload.append('emergencyContact', JSON.stringify({
           name: formData.emergencyName,
           phone: formData.emergencyPhone
