@@ -272,7 +272,7 @@ export default function SymptomChecker() {
           messages={messages}
           isTyping={isTyping}
           onSendMessage={handleSendMessage}
-          disabled={showChoiceButtons}
+          disabled={showChoiceButtons || isTyping}
           headerRight={
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setIsHistoryOpen(true)} className="gap-2">
